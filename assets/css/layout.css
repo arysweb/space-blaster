@@ -21,6 +21,13 @@ body {
   justify-content: center;
 }
 
+.sb-view--gameplay {
+  align-items: stretch;
+  justify-content: center;
+  padding: 0;
+  gap: 0;
+}
+
 .sb-header {
   display: flex;
   align-items: center;
@@ -57,7 +64,6 @@ body {
 }
 
 .sb-button {
-  font-family: 'Courier New', monospace;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   border: 2px solid var(--sb-border);
@@ -77,7 +83,6 @@ body {
 }
 
 .sb-skill-node {
-  font-family: 'Courier New', monospace;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0.4rem 0.6rem;
@@ -110,4 +115,137 @@ body {
 
 .sb-stat-value {
   font-size: 0.9rem;
+}
+
+.sb-main-hero {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.sb-main-hero-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+}
+
+.sb-main-title {
+  font-size: 3rem;
+}
+
+.sb-main-subtitle {
+  font-size: 0.9rem;
+  color: var(--sb-muted);
+}
+
+.sb-nav-row {
+  display: flex;
+  justify-content: center;
+  margin: 4rem 0;
+}
+
+.sb-nav-row-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 0;
+  margin: 0;
+}
+
+.sb-nav-item {
+  padding: 0;
+  margin: 0;
+}
+
+.sb-nav-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--sb-accent-strong);
+  font-family: var(--sb-font-game);
+  font-size: 1.3rem;
+  text-transform: capitalize;
+  cursor: pointer;
+}
+
+.sb-main-hero-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sb-hero-image {
+  max-width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.sb-info-box {
+  border: 2px solid var(--sb-border);
+  padding: 1rem;
+  text-align: left;
+}
+
+.sb-info-box p {
+  color: var(--sb-muted);
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.sb-gameplay {
+  flex: 1;
+  position: relative;
+  background-color: #000;
+  overflow: hidden;
+}
+
+/* Prevent text/image selection and dragging in the gameplay area so double-clicks
+   don't visually select clouds, the player, or other elements. */
+.sb-gameplay,
+.sb-gameplay * {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -moz-user-select: none;
+  -webkit-user-drag: none;
+}
+
+.sb-gameplay-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sb-bg-elem {
+  position: absolute;
+  top: 0;
+  left: 0;
+  image-rendering: pixelated;
+}
+
+.sb-player {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  image-rendering: pixelated;
+  width: 36px;
+  height: auto;
+}
+
+.sb-projectile {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  image-rendering: pixelated;
+  pointer-events: none;
+  opacity: 0.6;
 }

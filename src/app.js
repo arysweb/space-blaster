@@ -2,6 +2,7 @@
 
 import { renderMainGame } from './views/main-game.js';
 import { renderUpdates } from './views/updates.js';
+import { renderGameScreen } from './views/game-screen.js';
 
 /**
  * Render the root application into a given container.
@@ -13,6 +14,8 @@ export function renderApp(container, route) {
 
   if (route === '/' || route === '') {
     renderMainGame(container);
+  } else if (route.startsWith('/play')) {
+    renderGameScreen(container);
   } else if (route.startsWith('/updates')) {
     renderUpdates(container);
   } else {

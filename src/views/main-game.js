@@ -7,84 +7,81 @@ export function renderMainGame(container) {
   const root = document.createElement('div');
   root.className = 'sb-view sb-view--game';
 
-  const header = document.createElement('header');
-  header.className = 'sb-header';
+  const main = document.createElement('main');
+  main.className = 'sb-main-hero';
 
-  const logo = document.createElement('h1');
-  logo.className = 'sb-logo';
-  logo.textContent = 'SPACE BLASTER';
+  const left = document.createElement('section');
+  left.className = 'sb-main-hero-left';
 
-  const nav = document.createElement('nav');
-  nav.className = 'sb-nav';
+  const title = document.createElement('h1');
+  title.className = 'sb-main-title';
+  title.textContent = 'SPACE BLASTER';
 
-  const updatesLink = document.createElement('button');
-  updatesLink.className = 'sb-button sb-button--ghost';
-  updatesLink.textContent = 'Updates & Stats';
-  updatesLink.addEventListener('click', () => navigateTo('/updates'));
+  const subtitle = document.createElement('p');
+  subtitle.className = 'sb-main-subtitle';
+  subtitle.textContent = 'Defend Earth. Destroy Aliens. Survive.';
 
-  nav.appendChild(updatesLink);
+  const navRow = document.createElement('nav');
+  navRow.className = 'sb-nav-row';
 
-  header.appendChild(logo);
-  header.appendChild(nav);
+  const list = document.createElement('ul');
+  list.className = 'sb-nav-row-list';
 
-  const content = document.createElement('main');
-  content.className = 'sb-content sb-content--split';
-
-  const leftPanel = document.createElement('section');
-  leftPanel.className = 'sb-panel';
-
-  const title = document.createElement('h2');
-  title.className = 'sb-heading';
-  title.textContent = 'Game Options';
-
-  const startButton = document.createElement('button');
-  startButton.className = 'sb-button sb-button--primary';
-  startButton.textContent = 'Start Game';
-
-  const settingsButton = document.createElement('button');
-  settingsButton.className = 'sb-button';
-  settingsButton.textContent = 'Settings';
-
-  leftPanel.appendChild(title);
-  leftPanel.appendChild(startButton);
-  leftPanel.appendChild(settingsButton);
-
-  const rightPanel = document.createElement('section');
-  rightPanel.className = 'sb-panel';
-
-  const skillTreeTitle = document.createElement('h2');
-  skillTreeTitle.className = 'sb-heading';
-  skillTreeTitle.textContent = 'Skill Tree (Basic Stub)';
-
-  const skillGrid = document.createElement('div');
-  skillGrid.className = 'sb-skill-tree';
-
-  const skills = [
-    { id: 'atk', label: 'Attack +' },
-    { id: 'spd', label: 'Speed +' },
-    { id: 'hp', label: 'Hull +' },
-    { id: 'rng', label: 'Range +' },
-    { id: 'crt', label: 'Critical +' },
-    { id: 'shd', label: 'Shield +' },
+  const items = [
+    { label: 'Start Game', onClick: () => navigateTo('/play') },
+    { label: 'Updates & Stats', onClick: () => navigateTo('/updates') },
+    { label: 'Settings', onClick: () => {/* settings logic later */} },
   ];
 
-  skills.forEach((skill) => {
-    const node = document.createElement('button');
-    node.className = 'sb-skill-node';
-    node.textContent = skill.label;
-    node.dataset.skillId = skill.id;
-    // Logic will be implemented later.
-    skillGrid.appendChild(node);
+  items.forEach(({ label, onClick }) => {
+    const li = document.createElement('li');
+    li.className = 'sb-nav-item';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'sb-nav-link';
+    btn.textContent = label;
+    btn.addEventListener('click', onClick);
+
+    li.appendChild(btn);
+    list.appendChild(li);
   });
 
-  rightPanel.appendChild(skillTreeTitle);
-  rightPanel.appendChild(skillGrid);
+  navRow.appendChild(list);
 
-  content.appendChild(leftPanel);
-  content.appendChild(rightPanel);
+  left.appendChild(title);
+  left.appendChild(subtitle);
+  left.appendChild(navRow);
 
-  root.appendChild(header);
-  root.appendChild(content);
+  const infoBox = document.createElement('section');
+  infoBox.className = 'sb-info-box';
+
+  const infoText = document.createElement('p');
+  infoText.innerHTML = [
+    'Use your mouse to control the ship.',
+    '',
+    'Destroy aliens to earn coins and upgrade your ship.',
+    '',
+    'How long can you survive?',
+  ].join('<br>');
+
+  infoBox.appendChild(infoText);
+  left.appendChild(infoBox);
+
+  const right = document.createElement('section');
+  right.className = 'sb-main-hero-right';
+
+  const heroImage = document.createElement('img');
+  heroImage.className = 'sb-hero-image';
+  heroImage.src = './assets/img/main-screen.png';
+  heroImage.alt = 'Space Blaster main screen preview';
+
+  right.appendChild(heroImage);
+
+  main.appendChild(left);
+  main.appendChild(right);
+
+  root.appendChild(main);
 
   container.appendChild(root);
 }

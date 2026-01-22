@@ -6,6 +6,7 @@
   --sb-border: #444444;
   --sb-accent: #e0e0e0;
   --sb-accent-strong: #ffffff;
+  --sb-font-game: 'Press Start 2P', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 body {
@@ -14,14 +15,12 @@ body {
 }
 
 .sb-logo {
-  font-family: 'Courier New', monospace;
   letter-spacing: 0.3em;
   font-size: 1.3rem;
   color: var(--sb-accent-strong);
 }
 
 .sb-heading {
-  font-family: 'Courier New', monospace;
   text-transform: uppercase;
   letter-spacing: 0.15em;
   font-size: 0.9rem;
@@ -66,4 +65,15 @@ body {
 
 .sb-stat-value {
   color: var(--sb-accent-strong);
+}
+
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('../fonts/PressStart2P-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+body {
+  font-family: var(--sb-font-game);
 }
