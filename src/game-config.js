@@ -22,8 +22,8 @@ export const GAME_CONFIG = {
   alienHealthPerTier: 0.8,
 
   // How much to shrink spawn intervals per level (multiplicative factor)
-  // Example: 0.97 = 3% faster per level.
-  levelSpawnIntervalScale: 0.97,
+  // Slightly more aggressive so spawn speed ramps up faster.
+  levelSpawnIntervalScale: 0.94,
   spawnIntervalMinCapSeconds: 0.5,
   spawnIntervalMaxCapSeconds: 2.0,
 };

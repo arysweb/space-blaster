@@ -92,6 +92,7 @@ export function setupAliens(playfield, player, callbacks = {}) {
   let nextSpawnIn = SPAWN_INTERVAL_MIN + Math.random() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
   const sessionStart = Date.now();
   let killCount = 0;
+  let coins = 0;
 
   // Level progression state.
   let currentLevel = 1;
@@ -189,7 +190,7 @@ export function setupAliens(playfield, player, callbacks = {}) {
           kills: killCount,
           deaths: 1,
           score: killCount,
-          coins: killCount,
+          coins,
         }),
       }).catch(() => {
         // Stats are best-effort only.
@@ -313,6 +314,8 @@ export function setupAliens(playfield, player, callbacks = {}) {
             // Count kills for basic stats and level progression.
             killCount += 1;
             killsThisLevel += 1;
+            // Reward more coins the higher the current level.
+            coins += currentLevel;
 
             // If we've just hit an exact wave kill-count (e.g. 20, 40, ...)
             // start a short cooldown where no new aliens spawn. Existing
@@ -331,7 +334,7 @@ export function setupAliens(playfield, player, callbacks = {}) {
             }
 
             if (callbacks.onStatsChange) {
-              callbacks.onStatsChange({ killCount });
+              callbacks.onStatsChange({ killCount, coins });
             }
 
             // Update level progression and advance level when thresholds are hit.

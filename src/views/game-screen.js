@@ -115,9 +115,9 @@ export function renderGameScreen(container) {
 
   // Set up aliens that spawn outside and move toward the player.
   setupAliens(playfield, player, {
-    onStatsChange: ({ killCount }) => {
+    onStatsChange: ({ killCount, coins }) => {
       if (scoreValue) scoreValue.textContent = String(killCount);
-      if (coinsValue) coinsValue.textContent = String(killCount);
+      if (coinsValue) coinsValue.textContent = String(coins);
     },
     onLevelProgress: ({ level, subLevelIndex, subLevelsPerLevel, progress }) => {
       if (levelLabel) {
