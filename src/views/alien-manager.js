@@ -2,18 +2,19 @@
 // Spawns aliens outside the playfield and moves them toward the player.
 
 import { navigateTo } from '../utils/navigation.js';
+import { GAME_CONFIG } from '../game-config.js';
 
 const ALIEN_IMAGES = [
   './assets/img/aliens/slug_1.png',
 ];
 
-const SPAWN_INTERVAL_MIN = 1.0; // seconds
-const SPAWN_INTERVAL_MAX = 3.0; // seconds
+let SPAWN_INTERVAL_MIN = GAME_CONFIG.spawnIntervalMinSeconds;
+let SPAWN_INTERVAL_MAX = GAME_CONFIG.spawnIntervalMaxSeconds;
 
-const ALIEN_BASE_SPEED = 45; // pixels per second
-const ALIEN_HEALTH = 3;
+const ALIEN_BASE_SPEED = GAME_CONFIG.alienBaseSpeed; // pixels per second
+const ALIEN_BASE_HEALTH = GAME_CONFIG.alienHealth;
 
-function createAlien(playfield) {
+function createAlien(playfield, maxHealth) {
   const rect = playfield.getBoundingClientRect();
 
   const img = document.createElement('img');
@@ -50,7 +51,8 @@ function createAlien(playfield) {
     x,
     y,
     speed: ALIEN_BASE_SPEED * (0.8 + Math.random() * 0.4),
-    health: ALIEN_HEALTH,
+    maxHealth: maxHealth || ALIEN_BASE_HEALTH,
+    health: maxHealth || ALIEN_BASE_HEALTH,
   };
 
   img.style.transform = `translate(${state.x}px, ${state.y}px)`;
@@ -72,9 +74,17 @@ function rectsOverlap(a, b) {
  *
  * @param {HTMLElement} playfield
  * @param {HTMLImageElement} player
- * @param {{ scoreEl?: HTMLElement, coinsEl?: HTMLElement }} [hud]
+ * @param {{
+ *   onStatsChange?: (stats: { killCount: number }) => void,
+ *   onLevelProgress?: (state: {
+ *     level: number,
+ *     subLevelIndex: number,
+ *     subLevelsPerLevel: number,
+ *     progress: number,
+ *   }) => void,
+ * }} [callbacks]
  */
-export function setupAliens(playfield, player, hud = {}) {
+export function setupAliens(playfield, player, callbacks = {}) {
   const aliens = [];
   let running = true;
 
@@ -82,6 +92,53 @@ export function setupAliens(playfield, player, hud = {}) {
   let nextSpawnIn = SPAWN_INTERVAL_MIN + Math.random() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
   const sessionStart = Date.now();
   let killCount = 0;
+
+  // Level progression state.
+  let currentLevel = 1;
+  let killsThisLevel = 0;
+
+  const SUB_LEVELS_PER_LEVEL = GAME_CONFIG.subLevelsPerLevel;
+  const KILLS_PER_SUB_LEVEL = GAME_CONFIG.killsPerSubLevel;
+  const KILLS_PER_LEVEL = SUB_LEVELS_PER_LEVEL * KILLS_PER_SUB_LEVEL;
+
+  let requiredKillsThisLevel = KILLS_PER_LEVEL;
+
+  function notifyLevelProgress() {
+    const clampedKills = Math.max(0, Math.min(killsThisLevel, requiredKillsThisLevel));
+    const progress = requiredKillsThisLevel > 0 ? clampedKills / requiredKillsThisLevel : 0;
+
+    // Determine sublevel by kills, 20 kills per sublevel.
+    let subLevelIndex = Math.floor(clampedKills / KILLS_PER_SUB_LEVEL); // 0-based
+    if (subLevelIndex >= SUB_LEVELS_PER_LEVEL) subLevelIndex = SUB_LEVELS_PER_LEVEL - 1;
+
+    if (callbacks.onLevelProgress) {
+      callbacks.onLevelProgress({
+        level: currentLevel,
+        subLevelIndex,
+        subLevelsPerLevel: SUB_LEVELS_PER_LEVEL,
+        progress,
+      });
+    }
+  }
+
+  function advanceLevelIfNeeded() {
+    if (killsThisLevel < requiredKillsThisLevel) {
+      return;
+    }
+
+    currentLevel += 1;
+    killsThisLevel = 0;
+    requiredKillsThisLevel = KILLS_PER_LEVEL;
+
+    // Slightly increase difficulty by reducing spawn interval, but keep a floor.
+    const minCap = GAME_CONFIG.spawnIntervalMinCapSeconds;
+    const maxCap = GAME_CONFIG.spawnIntervalMaxCapSeconds;
+    const scale = GAME_CONFIG.levelSpawnIntervalScale;
+    SPAWN_INTERVAL_MIN = Math.max(minCap, SPAWN_INTERVAL_MIN * scale);
+    SPAWN_INTERVAL_MAX = Math.max(maxCap, SPAWN_INTERVAL_MAX * scale);
+
+    notifyLevelProgress();
+  }
 
   const gameOverOverlay = document.createElement('div');
   gameOverOverlay.className = 'sb-gameover-overlay';
@@ -172,7 +229,8 @@ export function setupAliens(playfield, player, hud = {}) {
         const barOffsetY = -6; // pixels above alien origin
         alien.healthBar.style.transform = `translate(${alien.state.x}px, ${alien.state.y + barOffsetY}px)`;
 
-        const ratio = Math.max(0, Math.min(1, alien.state.health / ALIEN_HEALTH));
+        const maxHealth = alien.state.maxHealth || ALIEN_BASE_HEALTH;
+        const ratio = Math.max(0, Math.min(1, alien.state.health / maxHealth));
         alien.healthFill.style.width = `${ratio * 100}%`;
       }
 
@@ -235,16 +293,17 @@ export function setupAliens(playfield, player, hud = {}) {
             alien.img.remove();
             aliens.splice(i, 1);
 
-            // Count kills for basic stats.
+            // Count kills for basic stats and level progression.
             killCount += 1;
+            killsThisLevel += 1;
 
-            // Reflect score/coins in HUD if available.
-            if (hud && hud.scoreEl) {
-              hud.scoreEl.textContent = String(killCount);
+            if (callbacks.onStatsChange) {
+              callbacks.onStatsChange({ killCount });
             }
-            if (hud && hud.coinsEl) {
-              hud.coinsEl.textContent = String(killCount);
-            }
+
+            // Update level progression and advance level when thresholds are hit.
+            notifyLevelProgress();
+            advanceLevelIfNeeded();
 
             // Remove the death effect after a short delay.
             setTimeout(() => {
@@ -262,7 +321,16 @@ export function setupAliens(playfield, player, hud = {}) {
   function spawnIfNeeded(dt) {
     nextSpawnIn -= dt;
     if (nextSpawnIn <= 0) {
-      const alien = createAlien(playfield);
+      // Determine current sublevel index based on kills this level (0-based).
+      let subLevelIndex = Math.floor(killsThisLevel / KILLS_PER_SUB_LEVEL);
+      if (subLevelIndex >= SUB_LEVELS_PER_LEVEL) subLevelIndex = SUB_LEVELS_PER_LEVEL - 1;
+
+      // Global progression tier; later levels/sublevels are tougher.
+      const tier = (currentLevel - 1) * SUB_LEVELS_PER_LEVEL + subLevelIndex;
+      const bonusHealth = tier * GAME_CONFIG.alienHealthPerTier;
+      const maxHealth = ALIEN_BASE_HEALTH + bonusHealth;
+
+      const alien = createAlien(playfield, maxHealth);
       playfield.appendChild(alien.img);
       aliens.push(alien);
       nextSpawnIn = SPAWN_INTERVAL_MIN + Math.random() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
