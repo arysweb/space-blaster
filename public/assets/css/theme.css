@@ -1,0 +1,69 @@
+:root {
+  --sb-bg: #050505;
+  --sb-bg-alt: #111111;
+  --sb-fg: #f5f5f5;
+  --sb-muted: #bbbbbb;
+  --sb-border: #444444;
+  --sb-accent: #e0e0e0;
+  --sb-accent-strong: #ffffff;
+}
+
+body {
+  background-color: var(--sb-bg);
+  color: var(--sb-fg);
+}
+
+.sb-logo {
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.3em;
+  font-size: 1.3rem;
+  color: var(--sb-accent-strong);
+}
+
+.sb-heading {
+  font-family: 'Courier New', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-size: 0.9rem;
+}
+
+.sb-panel,
+.sb-button,
+.sb-skill-node,
+.sb-stat-box {
+  border-radius: 0;
+  border: 2px solid var(--sb-border);
+  box-shadow: 0 0 0 2px #000;
+}
+
+.sb-button,
+.sb-skill-node {
+  background-color: var(--sb-bg-alt);
+  color: var(--sb-fg);
+}
+
+.sb-button--primary {
+  background-color: var(--sb-accent);
+  color: #000;
+}
+
+.sb-button--ghost {
+  background-color: transparent;
+}
+
+.sb-button:hover,
+.sb-skill-node:hover {
+  filter: brightness(1.2);
+}
+
+.sb-list--updates li {
+  color: var(--sb-muted);
+}
+
+.sb-stat-label {
+  color: var(--sb-muted);
+}
+
+.sb-stat-value {
+  color: var(--sb-accent-strong);
+}
