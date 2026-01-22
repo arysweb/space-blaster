@@ -301,12 +301,14 @@ export function setupAliens(playfield, player, callbacks = {}) {
             killCount += 1;
             killsThisLevel += 1;
 
-            // Detect when we have just crossed a sublevel (wave) boundary
-            // for this level, and start a short cooldown where no new
-            // aliens spawn.
-            const prevSubLevelIndex = Math.floor((killsThisLevel - 1) / KILLS_PER_SUB_LEVEL);
-            const newSubLevelIndex = Math.floor(killsThisLevel / KILLS_PER_SUB_LEVEL);
-            if (newSubLevelIndex > prevSubLevelIndex) {
+            // If we've just hit an exact wave kill-count (e.g. 20, 40, ...)
+            // start a short cooldown where no new aliens spawn. Existing
+            // aliens on screen remain; we only pause spawning.
+            if (
+              killsThisLevel > 0 &&
+              killsThisLevel % KILLS_PER_SUB_LEVEL === 0 &&
+              waveCooldownRemaining <= 0
+            ) {
               waveCooldownRemaining = GAME_CONFIG.wavePauseSeconds || 0;
             }
 
@@ -363,8 +365,11 @@ export function setupAliens(playfield, player, callbacks = {}) {
     const dt = (now - lastTime) / 1000;
     lastTime = now;
 
-    spawnIfNeeded(dt);
+    // First update existing aliens and resolve kills/progression so
+    // waveCooldownRemaining is up-to-date, then decide whether new
+    // aliens are allowed to spawn this frame.
     updateAliens(dt);
+    spawnIfNeeded(dt);
 
     requestAnimationFrame(loop);
   }
