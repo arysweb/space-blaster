@@ -14,6 +14,9 @@ export const GAME_CONFIG = {
   subLevelsPerLevel: 5,
   killsPerSubLevel: 20,
 
+  // Short pause between waves/sublevels where no new aliens spawn.
+  wavePauseSeconds: 1.3,
+
   // How much extra max health each progression tier adds.
   // Tier is based on (level, sublevel) so later sublevels/levels are tougher.
   alienHealthPerTier: 0.8,

@@ -103,6 +103,10 @@ export function setupAliens(playfield, player, callbacks = {}) {
 
   let requiredKillsThisLevel = KILLS_PER_LEVEL;
 
+  // When a sublevel (wave) is completed, we pause spawning for a short
+  // time so the player gets a brief breather between waves.
+  let waveCooldownRemaining = 0;
+
   function notifyLevelProgress() {
     const clampedKills = Math.max(0, Math.min(killsThisLevel, requiredKillsThisLevel));
     const progress = requiredKillsThisLevel > 0 ? clampedKills / requiredKillsThisLevel : 0;
@@ -297,6 +301,15 @@ export function setupAliens(playfield, player, callbacks = {}) {
             killCount += 1;
             killsThisLevel += 1;
 
+            // Detect when we have just crossed a sublevel (wave) boundary
+            // for this level, and start a short cooldown where no new
+            // aliens spawn.
+            const prevSubLevelIndex = Math.floor((killsThisLevel - 1) / KILLS_PER_SUB_LEVEL);
+            const newSubLevelIndex = Math.floor(killsThisLevel / KILLS_PER_SUB_LEVEL);
+            if (newSubLevelIndex > prevSubLevelIndex) {
+              waveCooldownRemaining = GAME_CONFIG.wavePauseSeconds || 0;
+            }
+
             if (callbacks.onStatsChange) {
               callbacks.onStatsChange({ killCount });
             }
@@ -319,6 +332,12 @@ export function setupAliens(playfield, player, callbacks = {}) {
   }
 
   function spawnIfNeeded(dt) {
+    // If we're in a wave cooldown, do not spawn new aliens yet.
+    if (waveCooldownRemaining > 0) {
+      waveCooldownRemaining -= dt;
+      return;
+    }
+
     nextSpawnIn -= dt;
     if (nextSpawnIn <= 0) {
       // Determine current sublevel index based on kills this level (0-based).

@@ -57,7 +57,8 @@ export function renderGameScreen(container) {
     const dot = document.createElement('div');
     dot.className = 'sb-level-dot';
 
-    // Evenly distribute from 0% to 100% across the bar.
+    // Evenly distribute from 0% to 100% across the bar so the
+    // first circle is at the start and the last circle is at the end.
     const t = subLevelsPerLevel > 1 ? i / (subLevelsPerLevel - 1) : 0.5;
     dot.style.left = `${t * 100}%`;
 
@@ -77,6 +78,12 @@ export function renderGameScreen(container) {
   hud.appendChild(hudColCenter);
   hud.appendChild(hudColRight);
 
+  // Small toast message that appears when a new sublevel (wave) starts.
+  const waveToast = document.createElement('div');
+  waveToast.className = 'sb-level-toast';
+  waveToast.textContent = 'New wave!';
+  let waveToastHideTimeout = null;
+
   const playfield = document.createElement('div');
   playfield.className = 'sb-gameplay';
 
@@ -88,8 +95,9 @@ export function renderGameScreen(container) {
   player.src = './assets/img/player/player.png';
   player.alt = 'Player ship';
 
-  // Place HUD inside the gameplay area.
+  // Place HUD and toast inside the gameplay area.
   playfield.appendChild(hud);
+  playfield.appendChild(waveToast);
   playfield.appendChild(bgLayer);
   playfield.appendChild(player);
 
@@ -101,6 +109,9 @@ export function renderGameScreen(container) {
 
   // Set up player controls so the ship aims at the mouse.
   setupPlayerControls(playfield, player);
+
+  // Track last known sublevel so we can announce when a new wave starts.
+  let lastSubLevelIndex = 0;
 
   // Set up aliens that spawn outside and move toward the player.
   setupAliens(playfield, player, {
@@ -119,8 +130,8 @@ export function renderGameScreen(container) {
         levelProgressFill.style.width = `${pct}%`;
       }
 
-      // Each circle fills (becomes active) exactly when the bar's
-      // fill reaches its position along the track.
+      // Each circle fills (becomes active) once the bar's
+      // fill has clearly passed its stored position along the track.
       if (Array.isArray(subLevelDots)) {
         const clampedProgress = Math.max(0, Math.min(1, progress));
         for (let i = 0; i < subLevelDots.length; i += 1) {
@@ -128,8 +139,6 @@ export function renderGameScreen(container) {
           if (!dot) continue;
 
           const baseThreshold = parseFloat(dot.dataset.progressThreshold || '0');
-          // Nudge the threshold a little to the right so visually the
-          // bar has to pass the circle's center before it flips white.
           const threshold = Math.min(1, baseThreshold + 0.03);
 
           if (clampedProgress >= threshold) {
@@ -138,6 +147,21 @@ export function renderGameScreen(container) {
             dot.classList.remove('sb-level-dot--active');
           }
         }
+      }
+
+      // When sublevel index increases, show a short 'New wave!' message.
+      if (typeof subLevelIndex === 'number' && subLevelIndex > lastSubLevelIndex) {
+        lastSubLevelIndex = subLevelIndex;
+
+        if (waveToastHideTimeout !== null) {
+          clearTimeout(waveToastHideTimeout);
+        }
+
+        waveToast.classList.add('sb-level-toast--visible');
+        waveToastHideTimeout = setTimeout(() => {
+          waveToast.classList.remove('sb-level-toast--visible');
+          waveToastHideTimeout = null;
+        }, 1300);
       }
     },
   });

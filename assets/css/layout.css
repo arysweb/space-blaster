@@ -252,7 +252,7 @@ textarea {
 .sb-level-progress {
   position: relative;
   width: 240px;
-  height: 14px; /* taller container so dots can protrude above/below the bar */
+  height: 20px; /* taller container so larger dots can protrude above/below the bar */
   border-radius: 999px;
   overflow: visible; /* allow dots to extend outside the bar area */
   margin-left: 0.6rem;
@@ -263,7 +263,7 @@ textarea {
   top: 50%;
   left: 0;
   width: 100%;
-  height: 10px; /* a bit thicker so it fills more of the circle vertically */
+  height: 6px; /* slimmer bar while keeping larger dots above/below */
   transform: translateY(-50%);
   background: #3a3a3a; /* lighter gray interior */
   box-shadow: 0 0 0 1px #000; /* subtle outer edge without cutting through circles */
@@ -286,8 +286,8 @@ textarea {
 .sb-level-dot {
   position: absolute;
   top: 50%;
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   border-radius: 999px;
   border: none;
   background: #3a3a3a; /* same as bar interior until filled */
@@ -300,6 +300,41 @@ textarea {
      looks like part of the filling bar once reached. */
   background: #ffffff;
   box-shadow: 0 0 4px #ffffff;
+}
+
+.sb-level-toast {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.9);
+  color: #ffffff;
+  font-size: 2.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 30;
+}
+
+.sb-level-toast--visible {
+  animation: sb-level-toast-fade 1.3s ease-out forwards;
+}
+
+@keyframes sb-level-toast-fade {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 /* Prevent text/image selection and dragging in the gameplay area so double-clicks
