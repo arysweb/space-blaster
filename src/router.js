@@ -31,6 +31,16 @@ export function createRouter() {
     if (!path.startsWith('/')) {
       path = '/' + path;
     }
+
+    const current = getCurrentRoute();
+
+    // If the route is unchanged, still notify listeners so views can reset
+    // (used by the gameplay "Try Again" button).
+    if (current === path) {
+      notify();
+      return;
+    }
+
     window.location.hash = path;
   }
 

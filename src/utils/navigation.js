@@ -1,11 +1,20 @@
-// Navigation helpers that wrap the router's navigateTo function.
+// Navigation helpers that work with the hash-based router.
 // This keeps view code decoupled from how routing is implemented.
 
-import { createRouter } from '../router.js';
-
-// Singleton router instance for navigation from any view.
-const router = createRouter();
-
 export function navigateTo(path) {
-  router.navigateTo(path);
+  if (!path.startsWith('/')) {
+    path = '/' + path;
+  }
+
+  const current = (window.location.hash || '#/').replace(/^#/, '') || '/';
+
+  // If navigating to the same path, force a hash change so listeners re-run
+  // (used by the gameplay "Try Again" button to restart the /play view).
+  if (current === path) {
+    const suffix = (path.includes('?') ? '&' : '?') + 't=' + Date.now();
+    window.location.hash = path + suffix;
+    return;
+  }
+
+  window.location.hash = path;
 }

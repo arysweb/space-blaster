@@ -2,6 +2,15 @@ body {
   display: flex;
   align-items: stretch;
   justify-content: center;
+  font-family: var(--sb-font-game) !important;
+}
+
+/* Make all form controls inherit the global game font set on body */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
 }
 
 #app {
@@ -14,6 +23,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  font-family: var(--sb-font-game);
 }
 
 .sb-view--centered {
@@ -67,9 +77,9 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   border: 2px solid var(--sb-border);
-  padding: 0.4rem 0.8rem;
+  padding: 0.8rem 1rem;
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 
 .sb-button + .sb-button {
@@ -168,7 +178,6 @@ body {
   border: none;
   padding: 0;
   color: var(--sb-accent-strong);
-  font-family: var(--sb-font-game);
   font-size: 1.3rem;
   text-transform: capitalize;
   cursor: pointer;
@@ -203,6 +212,31 @@ body {
   position: relative;
   background-color: #000;
   overflow: hidden;
+}
+
+.sb-gameplay-hud {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  padding: 1rem 0.8rem;
+  font-size: 0.7rem;
+}
+
+.sb-gameplay-hud-col {
+  display: flex;
+  align-items: center;
+}
+
+.sb-gameplay-hud-col--left {
+  justify-content: flex-start;
+}
+
+.sb-gameplay-hud-col--center {
+  justify-content: center;
+}
+
+.sb-gameplay-hud-col--right {
+  justify-content: flex-end;
 }
 
 /* Prevent text/image selection and dragging in the gameplay area so double-clicks
@@ -248,4 +282,141 @@ body {
   image-rendering: pixelated;
   pointer-events: none;
   opacity: 0.6;
+}
+
+.sb-alien {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.sb-alien-health {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 26px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 1px #000;
+  pointer-events: none;
+}
+
+.sb-alien-health-fill {
+  height: 100%;
+  width: 100%;
+  background: #ff4d4d;
+}
+
+.sb-alien-death {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: auto;
+  image-rendering: pixelated;
+  pointer-events: none;
+  opacity: 0.6;
+  animation: sb-alien-death-fade 0.4s ease-out forwards;
+}
+
+@keyframes sb-alien-death-fade {
+  0% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.sb-gameover-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  font-family: var(--sb-font-game);
+}
+
+.sb-gameover-box {
+  background-color: var(--sb-bg-alt);
+  border: 2px solid var(--sb-border);
+  box-shadow: 0 0 0 2px #000;
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+}
+
+.sb-gameover-title {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.75rem;
+}
+
+.sb-gameover-text {
+  font-size: 0.75rem;
+  color: var(--sb-muted);
+}
+
+.sb-gameover-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+/* Modal for player name input */
+.sb-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.sb-modal {
+  background-color: var(--sb-bg-alt);
+  border: 2px solid var(--sb-border);
+  box-shadow: 0 0 0 2px #000;
+  padding: 1.25rem 1.5rem;
+  width: 35%;
+}
+
+.sb-modal-title {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 1rem;
+}
+
+.sb-modal-text {
+  font-size: 0.8rem;
+  color: var(--sb-muted);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.sb-modal-input {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 2px solid var(--sb-border);
+  background-color: var(--sb-bg);
+  color: var(--sb-fg);
+  font-size: 0.75rem;
+  box-shadow: 0 0 0 2px #000;
+  margin-bottom: 0.75rem;
+}
+
+.sb-modal-actions {
+  display: flex;
+  justify-content: flex-end;
 }
