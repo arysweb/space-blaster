@@ -57,9 +57,9 @@ export function renderGameScreen(container) {
     const dot = document.createElement('div');
     dot.className = 'sb-level-dot';
 
-    // Evenly distribute from 0% to 100% across the bar so the
-    // first circle is at the start and the last circle is at the end.
-    const t = subLevelsPerLevel > 1 ? i / (subLevelsPerLevel - 1) : 0.5;
+    // Position dots so they line up with the 5 equal sublevels
+    // (20 kills each out of 100 total): 0.2, 0.4, 0.6, 0.8, 1.0.
+    const t = subLevelsPerLevel > 0 ? (i + 1) / subLevelsPerLevel : 0.5;
     dot.style.left = `${t * 100}%`;
 
     // Remember this normalized position so we can compare it against
@@ -138,8 +138,7 @@ export function renderGameScreen(container) {
           const dot = subLevelDots[i];
           if (!dot) continue;
 
-          const baseThreshold = parseFloat(dot.dataset.progressThreshold || '0');
-          const threshold = Math.min(1, baseThreshold + 0.03);
+          const threshold = parseFloat(dot.dataset.progressThreshold || '0');
 
           if (clampedProgress >= threshold) {
             dot.classList.add('sb-level-dot--active');

@@ -144,6 +144,19 @@ export function setupAliens(playfield, player, callbacks = {}) {
     notifyLevelProgress();
   }
 
+  function clearAllAliens() {
+    for (let i = aliens.length - 1; i >= 0; i -= 1) {
+      const alien = aliens[i];
+      if (alien.healthBar) {
+        alien.healthBar.remove();
+      }
+      if (alien.img) {
+        alien.img.remove();
+      }
+    }
+    aliens.length = 0;
+  }
+
   const gameOverOverlay = document.createElement('div');
   gameOverOverlay.className = 'sb-gameover-overlay';
   gameOverOverlay.innerHTML = `
@@ -310,6 +323,11 @@ export function setupAliens(playfield, player, callbacks = {}) {
               waveCooldownRemaining <= 0
             ) {
               waveCooldownRemaining = GAME_CONFIG.wavePauseSeconds || 0;
+              // Between sublevels we want a clean field: remove all aliens
+              // immediately and reset spawn timer so the next wave starts
+              // right after the cooldown.
+              clearAllAliens();
+              nextSpawnIn = 0;
             }
 
             if (callbacks.onStatsChange) {
