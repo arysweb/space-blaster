@@ -3,20 +3,18 @@
 
 import { navigateTo } from '../utils/navigation.js';
 
-export function renderSkillTree(container) {
+export function renderSkillTree(container, options = {}) {
+  const { onClose } = options;
   const root = document.createElement('div');
   // Plain view without the updates-style border.
   root.className = 'sb-view';
 
   const header = document.createElement('header');
-  header.className = 'sb-header';
+  header.className = 'sb-header sb-header--skilltree';
 
   const coinsEl = document.createElement('div');
   coinsEl.className = 'sb-modal-text';
   coinsEl.textContent = 'Coins: …';
-
-  const spacer = document.createElement('div');
-  spacer.style.flex = '1';
 
   const nav = document.createElement('nav');
   nav.className = 'sb-nav';
@@ -24,16 +22,19 @@ export function renderSkillTree(container) {
   const backButton = document.createElement('button');
   backButton.className = 'sb-button sb-button--ghost';
   backButton.textContent = 'Back to Game';
-  backButton.addEventListener('click', () => navigateTo('/'));
+  // In overlay mode, call the provided close callback. Fallback to gameplay route
+  // for any legacy direct navigation usage.
+  backButton.addEventListener('click', () => {
+    if (typeof onClose === 'function') {
+      onClose();
+      return;
+    }
+    navigateTo('/play');
+  });
 
   nav.appendChild(backButton);
 
-  header.style.display = 'flex';
-  header.style.alignItems = 'center';
-  header.style.justifyContent = 'space-between';
-
   header.appendChild(coinsEl);
-  header.appendChild(spacer);
   header.appendChild(nav);
 
   const main = document.createElement('main');
@@ -98,8 +99,19 @@ export function renderSkillTree(container) {
     fetch('backend/public/api.php?path=skills/tree').then((r) => r.json()),
   ])
     .then(([playerState, skills]) => {
-      const coins = Number(playerState.coins || 0);
+      // Prefer spendable coins if provided by backend; fallback to lifetime coins.
+      const coinsRaw =
+        typeof playerState.availableCoins === 'number'
+          ? playerState.availableCoins
+          : playerState.coins;
+      const coins = Number(coinsRaw || 0);
       coinsEl.textContent = `Coins: ${coins}`;
+
+      // Keep main gameplay HUD (if present) in sync with spendable coins.
+      const hudCoinsEl = document.querySelector('.sb-gameplay-coins');
+      if (hudCoinsEl) {
+        hudCoinsEl.textContent = String(coins);
+      }
 
       // Find core skill definition from database.
       coreDef = Array.isArray(skills)
@@ -154,6 +166,11 @@ export function renderSkillTree(container) {
         coreLevel = Number(res.current_level || 0);
         const newCoins = Number(res.availableCoins || 0);
         coinsEl.textContent = `Coins: ${newCoins}`;
+        // Also update gameplay HUD coins to reflect spent amount.
+        const hudCoinsEl = document.querySelector('.sb-gameplay-coins');
+        if (hudCoinsEl) {
+          hudCoinsEl.textContent = String(newCoins);
+        }
         applyCoreSkillState(coreLevel, coreMaxLevel);
       })
       .catch(() => {

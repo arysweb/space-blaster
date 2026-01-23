@@ -92,7 +92,8 @@ export function setupAliens(playfield, player, callbacks = {}) {
   let nextSpawnIn = SPAWN_INTERVAL_MIN + Math.random() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
   const sessionStart = Date.now();
   let killCount = 0;
-  let coins = 0;
+  // Coins earned only in this run (used for stats persistence and HUD).
+  let runCoins = 0;
 
   // Level progression state.
   let currentLevel = 1;
@@ -190,7 +191,7 @@ export function setupAliens(playfield, player, callbacks = {}) {
           kills: killCount,
           deaths: 1,
           score: killCount,
-          coins,
+          coins: runCoins,
         }),
       }).catch(() => {
         // Stats are best-effort only.
@@ -212,6 +213,10 @@ export function setupAliens(playfield, player, callbacks = {}) {
 
     if (upgradeBtn) {
       upgradeBtn.addEventListener('click', () => {
+        if (callbacks.onUpgradeRequest) {
+          callbacks.onUpgradeRequest();
+          return;
+        }
         navigateTo('/skills');
       });
     }
@@ -322,7 +327,7 @@ export function setupAliens(playfield, player, callbacks = {}) {
             killCount += 1;
             killsThisLevel += 1;
             // Reward more coins the higher the current level.
-            coins += currentLevel;
+            runCoins += currentLevel;
 
             // If we've just hit an exact wave kill-count (e.g. 20, 40, ...)
             // start a short cooldown where no new aliens spawn. Existing
@@ -341,7 +346,9 @@ export function setupAliens(playfield, player, callbacks = {}) {
             }
 
             if (callbacks.onStatsChange) {
-              callbacks.onStatsChange({ killCount, coins });
+              // coins here means "coins earned this run"; the HUD layer can
+              // combine this with any existing spendable coins from backend.
+              callbacks.onStatsChange({ killCount, coins: runCoins });
             }
 
             // Update level progression and advance level when thresholds are hit.

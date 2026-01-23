@@ -12,6 +12,11 @@
   justify-content: center;
 }
 
+.sb-header--skilltree {
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--sb-border);
+}
+
 .sb-skill-node {
   text-transform: uppercase;
   padding: 1rem;
@@ -50,6 +55,7 @@
 
 .sb-skill-node--max {
   border-color: #b266ff;
+  box-shadow: 0 0 0 2px #000000, 0 0 10px #b266ff;
 }
 
 .sb-skill-wrapper {
@@ -73,7 +79,7 @@
   transform: translateY(-50%);
   margin-left: 10px;
   width: 320px;
-  padding: 8px 10px;
+  padding: 10px 12px;
   font-size: 0.8rem;
   color: var(--sb-muted);
   background-color: rgba(0, 0, 0, 0.9);
@@ -95,7 +101,7 @@
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .sb-skill-tooltip__name,
@@ -105,11 +111,11 @@
 
 .sb-skill-tooltip__cost {
   font-size: 0.75rem;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .sb-skill-tooltip__desc {
   font-size: 0.75rem;
-  line-height: 1.6;
+  line-height: 1.8;
   white-space: normal;
 }

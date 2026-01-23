@@ -151,11 +151,25 @@ try {
         $playerId = (int) $_COOKIE['sb_player_id'];
         $pdo = sb_get_pdo();
 
-        // Aggregate total coins from player_stats for this player.
+        // Aggregate total coins from player_stats for this player (lifetime coins earned).
         $stmt = $pdo->prepare('SELECT COALESCE(SUM(coins), 0) AS total_coins FROM player_stats WHERE player_id = :player_id');
         $stmt->execute([':player_id' => $playerId]);
         $row = $stmt->fetch();
         $coins = (int) ($row['total_coins'] ?? 0);
+
+        // Compute total coins already spent on skills to derive spendable coins.
+        $stmt = $pdo->prepare('SELECT COALESCE(SUM(spent_cost), 0) AS spent FROM (
+            SELECT ps.current_level,
+                   (s.base_cost * ps.current_level + s.cost_per_level * (ps.current_level * (ps.current_level - 1) / 2)) AS spent_cost
+            FROM player_skills ps
+            JOIN skills s ON ps.skill_id = s.id
+            WHERE ps.player_id = :player_id_inner
+        ) AS t');
+        $stmt->execute([':player_id_inner' => $playerId]);
+        $row = $stmt->fetch();
+        $spentCoins = (int) ($row['spent'] ?? 0);
+
+        $availableCoins = $coins - $spentCoins;
 
         // Fetch current levels per skill for this player.
         $stmt = $pdo->prepare('SELECT s.`key` AS skillKey, ps.current_level FROM player_skills ps JOIN skills s ON ps.skill_id = s.id WHERE ps.player_id = :player_id');
@@ -163,7 +177,10 @@ try {
         $skills = $stmt->fetchAll();
 
         echo json_encode([
+            // Lifetime coins earned across all runs.
             'coins' => $coins,
+            // Coins still available to spend in the skill tree.
+            'availableCoins' => $availableCoins,
             'skills' => $skills,
         ]);
         exit;

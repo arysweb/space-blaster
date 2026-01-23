@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 23, 2026 at 10:36 AM
+-- Generation Time: Jan 23, 2026 at 11:47 AM
 -- Server version: 8.4.7-0ubuntu0.25.04.2
 -- PHP Version: 8.4.5
 
@@ -39,8 +39,7 @@ CREATE TABLE `players` (
 --
 
 INSERT INTO `players` (`id`, `name`, `created_at`, `last_seen_at`) VALUES
-(3, 'Sebas', '2026-01-22 18:18:04', '2026-01-22 18:18:04'),
-(4, 'Anon_1818', '2026-01-23 09:19:15', '2026-01-23 09:19:15');
+(8, 'Sebas', '2026-01-23 11:39:07', '2026-01-23 11:39:07');
 
 -- --------------------------------------------------------
 
@@ -54,6 +53,13 @@ CREATE TABLE `player_skills` (
   `current_level` tinyint UNSIGNED NOT NULL DEFAULT '1',
   `unlocked_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `player_skills`
+--
+
+INSERT INTO `player_skills` (`player_id`, `skill_id`, `current_level`, `unlocked_at`) VALUES
+(8, 2, 1, '2026-01-23 11:39:35');
 
 -- --------------------------------------------------------
 
@@ -78,18 +84,11 @@ CREATE TABLE `player_stats` (
 --
 
 INSERT INTO `player_stats` (`id`, `player_id`, `started_at`, `ended_at`, `minutes_played`, `kills`, `deaths`, `score`, `coins`) VALUES
-(7, 3, '2026-01-22 18:26:52', '2026-01-22 18:26:52', 0, 0, 1, 0, 0),
-(8, 3, '2026-01-22 18:30:30', '2026-01-22 18:30:30', 0, 0, 1, 0, 0),
-(9, 3, '2026-01-22 18:32:07', '2026-01-22 18:32:07', 1, 13, 1, 13, 13),
-(10, 3, '2026-01-22 18:32:56', '2026-01-22 18:32:56', 1, 12, 1, 12, 12),
-(11, 3, '2026-01-22 18:55:17', '2026-01-22 18:55:17', 1, 24, 1, 24, 24),
-(12, 3, '2026-01-22 19:39:30', '2026-01-22 19:39:30', 1, 0, 1, 0, 0),
-(13, 3, '2026-01-22 19:40:08', '2026-01-22 19:40:08', 0, 0, 1, 0, 0),
-(14, 3, '2026-01-22 19:40:18', '2026-01-22 19:40:18', 0, 0, 1, 0, 0),
-(15, 3, '2026-01-22 20:05:15', '2026-01-22 20:05:15', 0, 0, 1, 0, 0),
-(16, 3, '2026-01-22 20:12:08', '2026-01-22 20:12:08', 3, 61, 1, 61, 61),
-(17, 3, '2026-01-22 20:42:30', '2026-01-22 20:42:30', 1, 0, 1, 0, 0),
-(18, 4, '2026-01-23 09:29:59', '2026-01-23 09:29:59', 2, 25, 1, 25, 25);
+(27, 8, '2026-01-23 11:39:30', '2026-01-23 11:39:30', 0, 5, 1, 5, 5),
+(28, 8, '2026-01-23 11:40:08', '2026-01-23 11:40:08', 0, 0, 1, 0, 0),
+(29, 8, '2026-01-23 11:43:08', '2026-01-23 11:43:08', 0, 0, 1, 0, 0),
+(30, 8, '2026-01-23 11:45:04', '2026-01-23 11:45:04', 0, 2, 1, 2, 2),
+(31, 8, '2026-01-23 11:45:50', '2026-01-23 11:45:50', 1, 9, 1, 9, 9);
 
 -- --------------------------------------------------------
 
@@ -161,13 +160,13 @@ ALTER TABLE `skills`
 -- AUTO_INCREMENT for table `players`
 --
 ALTER TABLE `players`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `player_stats`
 --
 ALTER TABLE `player_stats`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT for table `skills`

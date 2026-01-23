@@ -428,6 +428,29 @@ textarea {
   font-family: var(--sb-font-game);
 }
 
+.sb-skill-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  z-index: 25;
+}
+
+.sb-skill-overlay--hidden {
+  display: none;
+}
+
+.sb-skill-overlay .sb-view {
+  /* Make the skill-tree view fill the overlay area nicely */
+  flex: 1;
+  max-width: 100%;
+  min-height: 100%;
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
 .sb-gameover-box {
   background-color: var(--sb-bg-alt);
   border: 2px solid var(--sb-border);

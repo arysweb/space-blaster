@@ -4,6 +4,7 @@
 import { setupBackgroundClouds } from './game-background.js';
 import { setupPlayerControls } from './player-controller.js';
 import { setupAliens } from './alien-manager.js';
+import { renderSkillTree } from './skill-tree.js';
 import { GAME_CONFIG } from '../game-config.js';
 
 export function renderGameScreen(container) {
@@ -95,11 +96,16 @@ export function renderGameScreen(container) {
   player.src = './assets/img/player/player.png';
   player.alt = 'Player ship';
 
+  // Skill tree overlay container, initially hidden.
+  const skillOverlay = document.createElement('div');
+  skillOverlay.className = 'sb-skill-overlay sb-skill-overlay--hidden';
+
   // Place HUD and toast inside the gameplay area.
   playfield.appendChild(hud);
   playfield.appendChild(waveToast);
   playfield.appendChild(bgLayer);
   playfield.appendChild(player);
+  playfield.appendChild(skillOverlay);
 
   root.appendChild(playfield);
   container.appendChild(root);
@@ -113,12 +119,26 @@ export function renderGameScreen(container) {
   // Track last known sublevel so we can announce when a new wave starts.
   let lastSubLevelIndex = 0;
 
+  // Base spendable coins loaded from backend at the start of the run.
+  let baseAvailableCoins = 0;
+
   // Set up aliens that spawn outside and move toward the player.
-  setupAliens(playfield, player, {
-    onStatsChange: ({ killCount, coins }) => {
-      if (scoreValue) scoreValue.textContent = String(killCount);
-      if (coinsValue) coinsValue.textContent = String(coins);
-    },
+  function openSkillOverlay() {
+    skillOverlay.classList.remove('sb-skill-overlay--hidden');
+    renderSkillTree(skillOverlay, {
+      onClose: () => {
+        skillOverlay.classList.add('sb-skill-overlay--hidden');
+      },
+    });
+  }
+
+  function startAliens() {
+    setupAliens(playfield, player, {
+      // coins here are "coins earned this run" (runCoins).
+      onStatsChange: ({ killCount, coins }) => {
+        if (scoreValue) scoreValue.textContent = String(killCount);
+        if (coinsValue) coinsValue.textContent = String(baseAvailableCoins + coins);
+      },
     onLevelProgress: ({ level, subLevelIndex, subLevelsPerLevel, progress }) => {
       if (levelLabel) {
         levelLabel.textContent = `Lvl ${level}`;
@@ -163,7 +183,29 @@ export function renderGameScreen(container) {
         }, 1300);
       }
     },
-  });
+    onUpgradeRequest: openSkillOverlay,
+    });
+  }
+
+  // Load spendable coins from backend so HUD starts from the same value as the skill tree.
+  fetch('backend/public/api.php?path=player/skills')
+    .then((r) => r.json())
+    .then((playerState) => {
+      const coinsRaw =
+        typeof playerState.availableCoins === 'number'
+          ? playerState.availableCoins
+          : playerState.coins;
+      const coins = Number(coinsRaw || 0);
+      baseAvailableCoins = coins;
+      if (coinsValue) coinsValue.textContent = String(coins);
+    })
+    .catch(() => {
+      // Leave HUD coins at their default if backend is unavailable.
+    })
+    .finally(() => {
+      // Start aliens after we’ve attempted to sync HUD coins.
+      startAliens();
+    });
 
   // Ensure double-clicks in the gameplay area do not trigger browser selection behavior.
   playfield.addEventListener('dblclick', (event) => {

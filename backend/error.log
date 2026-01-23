@@ -1,1 +1,2 @@
 [2026-01-22 19:10:14] SQLSTATE[42S22]: Column not found: 1054 Unknown column 'total_sessions' in 'field list' in D:\XAMPP\htdocs\2026\space-blaster\backend\public\api.php:64
+[2026-01-23 12:38:47] SQLSTATE[23000]: Integrity constraint violation: 1452 Cannot add or update a child row: a foreign key constraint fails (`space_blaster`.`player_stats`, CONSTRAINT `fk_player_stats_player` FOREIGN KEY (`player_id`) REFERENCES `players` (`id`) ON DELETE CASCADE) in D:\XAMPP\htdocs\2026\space-blaster\backend\public\api.php:119
