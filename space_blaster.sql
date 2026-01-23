@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 23, 2026 at 11:47 AM
+-- Generation Time: Jan 23, 2026 at 03:06 PM
 -- Server version: 8.4.7-0ubuntu0.25.04.2
 -- PHP Version: 8.4.5
 
@@ -34,13 +34,6 @@ CREATE TABLE `players` (
   `last_seen_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `players`
---
-
-INSERT INTO `players` (`id`, `name`, `created_at`, `last_seen_at`) VALUES
-(8, 'Sebas', '2026-01-23 11:39:07', '2026-01-23 11:39:07');
-
 -- --------------------------------------------------------
 
 --
@@ -53,13 +46,6 @@ CREATE TABLE `player_skills` (
   `current_level` tinyint UNSIGNED NOT NULL DEFAULT '1',
   `unlocked_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `player_skills`
---
-
-INSERT INTO `player_skills` (`player_id`, `skill_id`, `current_level`, `unlocked_at`) VALUES
-(8, 2, 1, '2026-01-23 11:39:35');
 
 -- --------------------------------------------------------
 
@@ -78,17 +64,6 @@ CREATE TABLE `player_stats` (
   `score` int UNSIGNED NOT NULL DEFAULT '0',
   `coins` int UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `player_stats`
---
-
-INSERT INTO `player_stats` (`id`, `player_id`, `started_at`, `ended_at`, `minutes_played`, `kills`, `deaths`, `score`, `coins`) VALUES
-(27, 8, '2026-01-23 11:39:30', '2026-01-23 11:39:30', 0, 5, 1, 5, 5),
-(28, 8, '2026-01-23 11:40:08', '2026-01-23 11:40:08', 0, 0, 1, 0, 0),
-(29, 8, '2026-01-23 11:43:08', '2026-01-23 11:43:08', 0, 0, 1, 0, 0),
-(30, 8, '2026-01-23 11:45:04', '2026-01-23 11:45:04', 0, 2, 1, 2, 2),
-(31, 8, '2026-01-23 11:45:50', '2026-01-23 11:45:50', 1, 9, 1, 9, 9);
 
 -- --------------------------------------------------------
 
@@ -116,7 +91,11 @@ CREATE TABLE `skills` (
 --
 
 INSERT INTO `skills` (`id`, `key`, `name`, `icon`, `description`, `x`, `y`, `base_cost`, `cost_per_level`, `max_level`, `effect_type`, `effect_value_per_level`) VALUES
-(2, 'core_center', 'Skill Tree', './assets/img/player_projectile.png', 'Unlocks access to all upgrade paths.', 0, 0, 5, 5, 1, 'global_power', 2);
+(2, 'core_center', 'Skill Tree', './assets/img/player_projectile.png', 'Unlocks access to all upgrade paths.', 0, 0, 5, 5, 1, NULL, NULL),
+(3, 'fire_rate_top', 'Rapid Fire', './assets/img/player_projectile.png', 'Increases your fire rate. Each level lets you shoot faster.', 0, 2, 12, 10, 5, 'fire_rate', 0.125),
+(4, 'coin_gain_bottom', 'Loot Boost', './assets/img/coin.png', 'Earn more coins from destroyed aliens. Each level increases coin gains.', 0, -2, 10, 8, 5, 'coin_gain', 0.34),
+(5, 'max_health_left', 'Hull Plating', './assets/img/player/player.png', 'Reinforces your hull, increasing max health and survivability.', -2, 0, 12, 9, 5, 'max_health', 1),
+(6, 'crit_right', 'Critical Systems', './assets/img/crit_projectile.png', 'Upgrades targeting systems so some shots deal critical damage.', 2, 0, 14, 12, 5, 'crit_chance', 0.03);
 
 --
 -- Indexes for dumped tables
@@ -160,19 +139,19 @@ ALTER TABLE `skills`
 -- AUTO_INCREMENT for table `players`
 --
 ALTER TABLE `players`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `player_stats`
 --
 ALTER TABLE `player_stats`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
 
 --
 -- AUTO_INCREMENT for table `skills`
 --
 ALTER TABLE `skills`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- Constraints for dumped tables

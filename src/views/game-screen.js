@@ -6,6 +6,7 @@ import { setupPlayerControls } from './player-controller.js';
 import { setupAliens } from './alien-manager.js';
 import { renderSkillTree } from './skill-tree.js';
 import { GAME_CONFIG } from '../game-config.js';
+import { BASE_PLAYER_STATS, applySkills } from '../utils/skills.js';
 
 export function renderGameScreen(container) {
   const root = document.createElement('div');
@@ -113,8 +114,11 @@ export function renderGameScreen(container) {
   // Set up the animated background clouds.
   setupBackgroundClouds(playfield, bgLayer, root);
 
-  // Set up player controls so the ship aims at the mouse.
-  setupPlayerControls(playfield, player);
+  // Player stats after applying skills (fire rate, coin gain, health, crit...).
+  let playerStats = { ...BASE_PLAYER_STATS };
+
+  // Player input controller so we can update fire rate mid-run.
+  let playerControls = null;
 
   // Track last known sublevel so we can announce when a new wave starts.
   let lastSubLevelIndex = 0;
@@ -122,12 +126,48 @@ export function renderGameScreen(container) {
   // Base spendable coins loaded from backend at the start of the run.
   let baseAvailableCoins = 0;
 
+  let cachedSkillDefs = [];
+  let cachedPlayerSkills = [];
+
+  function recomputePlayerStats() {
+    playerStats = applySkills(BASE_PLAYER_STATS, cachedPlayerSkills, cachedSkillDefs);
+
+    const baseShotsPerSecond = GAME_CONFIG.baseShotsPerSecond || 4;
+    const effectiveShotsPerSecond = baseShotsPerSecond * (playerStats.fireRate || 1);
+    if (playerControls && typeof playerControls.setShotsPerSecond === 'function') {
+      playerControls.setShotsPerSecond(effectiveShotsPerSecond);
+    }
+  }
+
   // Set up aliens that spawn outside and move toward the player.
   function openSkillOverlay() {
     skillOverlay.classList.remove('sb-skill-overlay--hidden');
     renderSkillTree(skillOverlay, {
       onClose: () => {
         skillOverlay.classList.add('sb-skill-overlay--hidden');
+      },
+      onSkillsChanged: () => {
+        Promise.all([
+          fetch('backend/public/api.php?path=player/skills').then((r) => r.json()),
+          fetch('backend/public/api.php?path=skills/tree').then((r) => r.json()),
+        ])
+          .then(([playerState, skillDefs]) => {
+            const coinsRaw =
+              typeof playerState.availableCoins === 'number'
+                ? playerState.availableCoins
+                : playerState.coins;
+            const coins = Number(coinsRaw || 0);
+            baseAvailableCoins = coins;
+            if (coinsValue) coinsValue.textContent = String(coins);
+
+            cachedPlayerSkills = Array.isArray(playerState.skills) ? playerState.skills : [];
+            cachedSkillDefs = Array.isArray(skillDefs) ? skillDefs : [];
+
+            recomputePlayerStats();
+          })
+          .catch(() => {
+            // Ignore failures; gameplay continues with current stats.
+          });
       },
     });
   }
@@ -187,10 +227,13 @@ export function renderGameScreen(container) {
     });
   }
 
-  // Load spendable coins from backend so HUD starts from the same value as the skill tree.
-  fetch('backend/public/api.php?path=player/skills')
-    .then((r) => r.json())
-    .then((playerState) => {
+  // Load spendable coins and skills so HUD and mechanics start from the
+  // same state as the skill tree.
+  Promise.all([
+    fetch('backend/public/api.php?path=player/skills').then((r) => r.json()),
+    fetch('backend/public/api.php?path=skills/tree').then((r) => r.json()),
+  ])
+    .then(([playerState, skillDefs]) => {
       const coinsRaw =
         typeof playerState.availableCoins === 'number'
           ? playerState.availableCoins
@@ -198,13 +241,77 @@ export function renderGameScreen(container) {
       const coins = Number(coinsRaw || 0);
       baseAvailableCoins = coins;
       if (coinsValue) coinsValue.textContent = String(coins);
+
+      // Compute final player stats from base + skills.
+      cachedPlayerSkills = Array.isArray(playerState.skills) ? playerState.skills : [];
+      cachedSkillDefs = Array.isArray(skillDefs) ? skillDefs : [];
+      recomputePlayerStats();
     })
     .catch(() => {
-      // Leave HUD coins at their default if backend is unavailable.
+      // If backend is unavailable, keep base stats and starting coins.
+      playerStats = { ...BASE_PLAYER_STATS };
     })
     .finally(() => {
-      // Start aliens after we’ve attempted to sync HUD coins.
-      startAliens();
+      const baseShotsPerSecond = GAME_CONFIG.baseShotsPerSecond || 4;
+      const effectiveShotsPerSecond = baseShotsPerSecond * (playerStats.fireRate || 1);
+
+      // Set up player controls after we know the effective fire rate from skills.
+      playerControls = setupPlayerControls(playfield, player, {
+        shotsPerSecond: effectiveShotsPerSecond,
+      });
+
+      // Start aliens after we’ve attempted to sync HUD coins and skill effects.
+      setupAliens(playfield, player, {
+        // coins here are "coins earned this run" (runCoins).
+        onStatsChange: ({ killCount, coins }) => {
+          if (scoreValue) scoreValue.textContent = String(killCount);
+          if (coinsValue) coinsValue.textContent = String(baseAvailableCoins + coins);
+        },
+        onLevelProgress: ({ level, subLevelIndex, subLevelsPerLevel, progress }) => {
+          if (levelLabel) {
+            levelLabel.textContent = `Lvl ${level}`;
+          }
+
+          if (levelProgressFill) {
+            const clampedProgress = Math.max(0, Math.min(1, progress));
+            const pct = clampedProgress * 100;
+            levelProgressFill.style.width = `${pct}%`;
+          }
+
+          if (Array.isArray(subLevelDots)) {
+            const clampedProgress = Math.max(0, Math.min(1, progress));
+            for (let i = 0; i < subLevelDots.length; i += 1) {
+              const dot = subLevelDots[i];
+              if (!dot) continue;
+
+              const threshold = parseFloat(dot.dataset.progressThreshold || '0');
+
+              if (clampedProgress >= threshold) {
+                dot.classList.add('sb-level-dot--active');
+              } else {
+                dot.classList.remove('sb-level-dot--active');
+              }
+            }
+          }
+
+          if (typeof subLevelIndex === 'number' && subLevelIndex > lastSubLevelIndex) {
+            lastSubLevelIndex = subLevelIndex;
+
+            if (waveToastHideTimeout !== null) {
+              clearTimeout(waveToastHideTimeout);
+            }
+
+            waveToast.classList.add('sb-level-toast--visible');
+            waveToastHideTimeout = setTimeout(() => {
+              waveToast.classList.remove('sb-level-toast--visible');
+              waveToastHideTimeout = null;
+            }, 1300);
+          }
+        },
+        onUpgradeRequest: openSkillOverlay,
+        // Pass final stats so alien-manager can apply mechanics.
+        getPlayerStats: () => playerStats,
+      });
     });
 
   // Ensure double-clicks in the gameplay area do not trigger browser selection behavior.

@@ -1,17 +1,30 @@
 // Player controller for the gameplay screen.
 // Keeps the player ship in the center and rotates it to face the mouse.
 
+import { GAME_CONFIG } from '../game-config.js';
+
 /**
  * Set up mouse-controlled aiming for the player ship.
  *
  * @param {HTMLElement} playfield - The main gameplay area element.
  * @param {HTMLImageElement} player - The player ship image element.
  */
-export function setupPlayerControls(playfield, player) {
+export function setupPlayerControls(playfield, player, options = {}) {
   // Ensure player is visually centered by default (matches CSS).
   player.style.left = '50%';
   player.style.top = '50%';
   player.style.transform = 'translate(-50%, -50%)';
+
+  const { shotsPerSecond } = options;
+
+  const baseShotsPerSecond = GAME_CONFIG.baseShotsPerSecond || 4;
+  const effectiveShotsPerSecond =
+    typeof shotsPerSecond === 'number' && shotsPerSecond > 0
+      ? shotsPerSecond
+      : baseShotsPerSecond;
+
+  let fireCooldownMs = 1000 / effectiveShotsPerSecond;
+  let lastShotAt = 0;
 
   function spawnProjectile(targetClientX, targetClientY) {
     const rect = playfield.getBoundingClientRect();
@@ -103,6 +116,21 @@ export function setupPlayerControls(playfield, player) {
 
   // Fire a projectile from the player toward the mouse pointer on click.
   playfield.addEventListener('click', (event) => {
+    const now = performance.now();
+    if (now - lastShotAt < fireCooldownMs) {
+      return;
+    }
+    lastShotAt = now;
     spawnProjectile(event.clientX, event.clientY);
   });
+
+  return {
+    setShotsPerSecond(nextShotsPerSecond) {
+      const normalized =
+        typeof nextShotsPerSecond === 'number' && nextShotsPerSecond > 0
+          ? nextShotsPerSecond
+          : baseShotsPerSecond;
+      fireCooldownMs = 1000 / normalized;
+    },
+  };
 }

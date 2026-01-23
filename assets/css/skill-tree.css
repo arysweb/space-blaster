@@ -25,13 +25,94 @@
   border-radius: 0;
   border: 2px solid var(--sb-border);
   box-shadow: 0 0 0 2px #000;
-  background-color: var(--sb-bg-alt);
+  background-color: #000;
   color: var(--sb-fg);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 60px;
   height: 60px;
+}
+
+/* Wrapper becomes a small grid anchor so we can place directional nodes
+   around the core in a 60x60 cell layout with an empty cell between. */
+.sb-skill-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+}
+
+/* Center node stays in the middle of the wrapper. */
+.sb-skill-wrapper > .sb-skill-node:not(.sb-skill-node--top):not(.sb-skill-node--bottom):not(.sb-skill-node--left):not(.sb-skill-node--right) {
+  position: relative;
+  z-index: 2;
+}
+
+/* Grid step: 60px cell size. We want one empty cell between center and
+   the directional node, so offset by 2 * 60 = 120px from the center. */
+.sb-skill-node--top,
+.sb-skill-node--bottom,
+.sb-skill-node--left,
+.sb-skill-node--right {
+  position: absolute;
+  z-index: 2;
+}
+
+.sb-skill-node--top {
+  top: -120px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.sb-skill-node--bottom {
+  bottom: -120px;
+  left: 50%;
+  transform: translate(-50%, 50%);
+}
+
+.sb-skill-node--left {
+  left: -120px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.sb-skill-node--right {
+  right: -120px;
+  top: 50%;
+  transform: translate(50%, -50%);
+}
+
+/* Simple connector lines from the core to each directional node. These
+   run through the empty grid cell between center and child.
+   Only visible once branches are revealed. */
+.sb-skill-wrapper.sb-skill-wrapper--branches::before,
+.sb-skill-wrapper.sb-skill-wrapper--branches::after {
+  content: '';
+  position: absolute;
+  background-color: var(--sb-border);
+  z-index: 1;
+}
+
+/* Vertical line (top <-> bottom) */
+.sb-skill-wrapper.sb-skill-wrapper--branches::before {
+  width: 2px;
+  height: 240px; /* covers two cells above and below */
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Horizontal line (left <-> right) */
+.sb-skill-wrapper.sb-skill-wrapper--branches::after {
+  height: 2px;
+  width: 240px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .sb-skill-node:hover {
@@ -45,8 +126,8 @@
 }
 
 .sb-skill-node--locked-available {
-  border-color: rgba(200, 200, 200, 0.7);
-  opacity: 0.6;
+  border-color: #ffffff;
+  opacity: 1;
 }
 
 .sb-skill-node--unlocked {
@@ -74,9 +155,9 @@
 
 .sb-skill-tooltip {
   position: absolute;
-  top: 50%;
-  left: 100%;
-  transform: translateY(-50%);
+  top: 0;
+  left: 0;
+  transform: translate(0, 0);
   margin-left: 10px;
   width: 320px;
   padding: 10px 12px;
@@ -87,6 +168,7 @@
   box-shadow: 0 0 0 1px #000000;
   text-align: left;
   pointer-events: none;
+  z-index: 5; /* sit above all skill nodes and connectors */
 }
 
 .sb-skill-tooltip--hidden {

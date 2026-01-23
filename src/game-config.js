@@ -26,4 +26,9 @@ export const GAME_CONFIG = {
   levelSpawnIntervalScale: 0.94,
   spawnIntervalMinCapSeconds: 0.5,
   spawnIntervalMaxCapSeconds: 2.0,
+
+  // Player firing
+  // Base shots per second. Used as a cooldown so even if the player clicks
+  // very fast, projectiles cannot spawn faster than this rate.
+  baseShotsPerSecond: 4,
 };

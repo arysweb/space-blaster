@@ -95,6 +95,23 @@ export function setupAliens(playfield, player, callbacks = {}) {
   // Coins earned only in this run (used for stats persistence and HUD).
   let runCoins = 0;
 
+  // Final player stats after skills; defaults match BASE_PLAYER_STATS.
+  const getPlayerStats =
+    typeof callbacks.getPlayerStats === 'function'
+      ? callbacks.getPlayerStats
+      : () =>
+          callbacks.playerStats || {
+            fireRate: 1.0,
+            coinGain: 0,
+            maxHealth: 1,
+            critChance: 0.0,
+            globalPower: 1.0,
+          };
+
+  // Player health in "lives"; skills directly increase maxHealth.
+  let playerMaxHealth = Math.max(1, Math.round(getPlayerStats().maxHealth || 1));
+  let playerHealth = playerMaxHealth;
+
   // Level progression state.
   let currentLevel = 1;
   let killsThisLevel = 0;
@@ -226,6 +243,15 @@ export function setupAliens(playfield, player, callbacks = {}) {
     const rect = playfield.getBoundingClientRect();
     const playerRect = player.getBoundingClientRect();
 
+    const playerStats = getPlayerStats();
+
+    const nextMaxHealth = Math.max(1, Math.round(playerStats.maxHealth || 1));
+    if (nextMaxHealth > playerMaxHealth) {
+      const diff = nextMaxHealth - playerMaxHealth;
+      playerMaxHealth = nextMaxHealth;
+      playerHealth += diff;
+    }
+
     // Check collisions with player-projectile elements.
     const projectiles = Array.from(playfield.querySelectorAll('.sb-projectile'));
 
@@ -266,10 +292,25 @@ export function setupAliens(playfield, player, callbacks = {}) {
 
       const alienRect = alien.img.getBoundingClientRect();
 
-      // Collision with player => game over.
+      // Collision with player => consume health; game over when health runs out.
       if (rectsOverlap(alienRect, playerRect)) {
-        triggerGameOver();
-        return;
+        playerHealth -= 1;
+
+        // Remove this alien on hit.
+        if (alien.healthBar) {
+          alien.healthBar.remove();
+        }
+        alien.img.remove();
+        aliens.splice(i, 1);
+
+        if (playerHealth <= 0) {
+          triggerGameOver();
+          return;
+        }
+
+        // Briefly pause spawns after a hit to give the player a moment.
+        waveCooldownRemaining = GAME_CONFIG.wavePauseSeconds || 0;
+        continue;
       }
 
       // Collisions with projectiles => damage aliens.
@@ -279,7 +320,21 @@ export function setupAliens(playfield, player, callbacks = {}) {
 
         const projRect = proj.getBoundingClientRect();
         if (rectsOverlap(alienRect, projRect)) {
-          alien.state.health -= 1;
+          // Apply damage with crit chance and global power from stats.
+          const baseDamage = 1;
+          const critMultiplier = 2;
+          const critChance = Math.max(0, Math.min(1, playerStats.critChance || 0));
+          const didCrit = critChance > 0 && Math.random() < critChance;
+
+          let damage = baseDamage * (playerStats.globalPower || 1);
+          if (didCrit) {
+            damage *= critMultiplier;
+          }
+
+          // Ensure at least 1 damage.
+          damage = Math.max(1, Math.round(damage));
+
+          alien.state.health -= damage;
 
           // Create health bar on first hit.
           if (!alien.healthBar) {
@@ -326,8 +381,12 @@ export function setupAliens(playfield, player, callbacks = {}) {
             // Count kills for basic stats and level progression.
             killCount += 1;
             killsThisLevel += 1;
-            // Reward more coins the higher the current level.
-            runCoins += currentLevel;
+            // Reward coins: base from level plus flat bonus from skills.
+            const baseKillCoins = currentLevel;
+            const coinGainRaw = Number(playerStats.coinGain || 0);
+            const extraCoins = coinGainRaw > 0 ? Math.max(1, Math.round(coinGainRaw)) : 0;
+            const coinsForKill = baseKillCoins + extraCoins;
+            runCoins += coinsForKill;
 
             // If we've just hit an exact wave kill-count (e.g. 20, 40, ...)
             // start a short cooldown where no new aliens spawn. Existing

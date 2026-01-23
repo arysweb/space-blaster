@@ -4,7 +4,7 @@
 import { navigateTo } from '../utils/navigation.js';
 
 export function renderSkillTree(container, options = {}) {
-  const { onClose } = options;
+  const { onClose, onSkillsChanged } = options;
   const root = document.createElement('div');
   // Plain view without the updates-style border.
   root.className = 'sb-view';
@@ -72,6 +72,61 @@ export function renderSkillTree(container, options = {}) {
 
   skillWrapper.appendChild(tooltip);
 
+  function showTooltipFor(def, level, maxLevel, anchorEl) {
+    if (!def) {
+      tooltip.innerHTML = '';
+      return;
+    }
+
+    const name = def.name || 'Skill';
+    const desc = def.description || '';
+    const baseCost = Number(def.base_cost || 0);
+    const costPerLevel = Number(def.cost_per_level || 0);
+
+    const currentLevel = Number(level || 0);
+    const max = Number(maxLevel || 1);
+    const levelText = `${currentLevel}/${max}`;
+
+    // Simple next-level cost preview.
+    let costText = '';
+    if (currentLevel < max) {
+      const nextLevelIndex = currentLevel; // 0-based for formula
+      const nextCost = baseCost + costPerLevel * nextLevelIndex;
+      if (nextCost > 0) {
+        costText = `Next level cost: ${nextCost} coins`;
+      }
+    }
+
+    tooltip.innerHTML = `
+      <div class="sb-skill-tooltip__header">
+        <span class="sb-skill-tooltip__name">${name}</span>
+        <span class="sb-skill-tooltip__level">Lv ${levelText}</span>
+      </div>
+      <div class="sb-skill-tooltip__cost">${costText}</div>
+      <div class="sb-skill-tooltip__desc">${desc}</div>
+    `;
+    // Position tooltip next to the hovered skill node if provided.
+    if (anchorEl && typeof anchorEl.getBoundingClientRect === 'function') {
+      const wrapperRect = skillWrapper.getBoundingClientRect();
+      const nodeRect = anchorEl.getBoundingClientRect();
+
+      const centerY = nodeRect.top + nodeRect.height / 2;
+      const offsetX = nodeRect.right - wrapperRect.left + 10; // 10px gap to the right
+
+      tooltip.style.left = `${offsetX}px`;
+      tooltip.style.top = `${centerY - wrapperRect.top}px`;
+      tooltip.style.transform = 'translateY(-50%)';
+    }
+    tooltip.classList.remove('sb-skill-tooltip--hidden');
+    tooltip.classList.add('sb-skill-tooltip--visible');
+  }
+
+  function hideTooltip() {
+    tooltip.innerHTML = '';
+    tooltip.classList.remove('sb-skill-tooltip--visible');
+    tooltip.classList.add('sb-skill-tooltip--hidden');
+  }
+
   function applyCoreSkillState(level, maxLevel) {
     coreSkill.classList.remove(
       'sb-skill-node--locked-unavailable',
@@ -85,13 +140,151 @@ export function renderSkillTree(container, options = {}) {
     } else if (level > 0) {
       coreSkill.classList.add('sb-skill-node--unlocked');
     } else {
-      coreSkill.classList.add('sb-skill-node--locked-available');
+      // Level 0: available only if we can afford the first level.
+      const baseCost = coreDef ? Number(coreDef.base_cost || 0) : 0;
+      if (baseCost > 0 && availableCoins >= baseCost) {
+        coreSkill.classList.add('sb-skill-node--locked-available');
+      } else {
+        coreSkill.classList.add('sb-skill-node--locked-unavailable');
+      }
+    }
+  }
+
+  function applySkillNodeState(node, skillDef) {
+    if (!node || !skillDef) return;
+
+    node.classList.remove(
+      'sb-skill-node--locked-unavailable',
+      'sb-skill-node--locked-available',
+      'sb-skill-node--unlocked',
+      'sb-skill-node--max',
+    );
+
+    const key = skillDef.key;
+    const level = Number(playerSkillLevels[key] || 0);
+    const max = typeof skillDef.max_level === 'number' ? skillDef.max_level : 1;
+
+    if (level >= max && max > 0) {
+      node.classList.add('sb-skill-node--max');
+      return;
+    }
+
+    if (level > 0) {
+      node.classList.add('sb-skill-node--unlocked');
+      return;
+    }
+
+    // Level 0: decide if we can afford level 1.
+    const baseCost = Number(skillDef.base_cost || 0);
+    if (baseCost > 0 && availableCoins >= baseCost) {
+      node.classList.add('sb-skill-node--locked-available');
+    } else {
+      node.classList.add('sb-skill-node--locked-unavailable');
     }
   }
 
   let coreLevel = 0;
   let coreMaxLevel = 1;
   let coreDef = null;
+  let branchesRendered = false;
+  let allSkills = [];
+  let playerSkillLevels = {};
+  let availableCoins = 0;
+
+  function createDirectionalNode(skillDef, positionClass) {
+    if (!skillDef) return null;
+
+    const node = document.createElement('div');
+    node.className = `sb-skill-node ${positionClass}`;
+
+    const icon = document.createElement('img');
+    icon.className = 'sb-skill-icon';
+    icon.alt = skillDef.name || 'Skill';
+    icon.src = skillDef.icon || './assets/img/player_projectile.png';
+
+    node.appendChild(icon);
+
+    // Attach tooltip handlers for this skill.
+    node.addEventListener('mouseenter', () => {
+      const level = playerSkillLevels[skillDef.key] || 0;
+      const max = typeof skillDef.max_level === 'number' ? skillDef.max_level : 1;
+      showTooltipFor(skillDef, level, max, node);
+    });
+
+    node.addEventListener('mouseleave', () => {
+      hideTooltip();
+    });
+
+    // Clicking a directional node attempts to buy/level it up.
+    node.addEventListener('click', () => {
+      const key = skillDef.key;
+      const currentLevel = Number(playerSkillLevels[key] || 0);
+      const max = typeof skillDef.max_level === 'number' ? skillDef.max_level : 1;
+      if (currentLevel >= max) return;
+
+      fetch('backend/public/api.php?path=player/skills/unlock', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ skillKey: key }),
+      })
+        .then((r) => r.json())
+        .then((res) => {
+          if (!res || res.error) {
+            return;
+          }
+
+          const newLevel = Number(res.current_level || 0);
+          playerSkillLevels[key] = newLevel;
+          availableCoins = Number(res.availableCoins || availableCoins);
+          coinsEl.textContent = `Coins: ${availableCoins}`;
+
+          const hudCoinsEl = document.querySelector('.sb-gameplay-coins');
+          if (hudCoinsEl) {
+            hudCoinsEl.textContent = String(availableCoins);
+          }
+
+          applySkillNodeState(node, skillDef);
+          // Re-evaluate core availability in case coins dropped below its cost.
+          applyCoreSkillState(coreLevel, coreMaxLevel);
+
+          if (typeof onSkillsChanged === 'function') {
+            onSkillsChanged();
+          }
+        })
+        .catch(() => {
+          // Ignore network errors for now.
+        });
+    });
+
+    applySkillNodeState(node, skillDef);
+    return node;
+  }
+
+  function renderBranches() {
+    // Once the core is unlocked at least to level 1, show the four
+    // directional skills (top/bottom/left/right) around it.
+    if (coreLevel <= 0 || !Array.isArray(allSkills) || branchesRendered) return;
+
+    const fireRate = allSkills.find((s) => s.key === 'fire_rate_top');
+    const coinGain = allSkills.find((s) => s.key === 'coin_gain_bottom');
+    const maxHealth = allSkills.find((s) => s.key === 'max_health_left');
+    const crit = allSkills.find((s) => s.key === 'crit_right');
+
+    const topNode = createDirectionalNode(fireRate, 'sb-skill-node--top');
+    const bottomNode = createDirectionalNode(coinGain, 'sb-skill-node--bottom');
+    const leftNode = createDirectionalNode(maxHealth, 'sb-skill-node--left');
+    const rightNode = createDirectionalNode(crit, 'sb-skill-node--right');
+
+    if (topNode) skillWrapper.appendChild(topNode);
+    if (bottomNode) skillWrapper.appendChild(bottomNode);
+    if (leftNode) skillWrapper.appendChild(leftNode);
+    if (rightNode) skillWrapper.appendChild(rightNode);
+
+    branchesRendered = true;
+    skillWrapper.classList.add('sb-skill-wrapper--branches');
+  }
 
   // Fetch player coins and current level of the core skill, plus core skill definition.
   Promise.all([
@@ -99,12 +292,16 @@ export function renderSkillTree(container, options = {}) {
     fetch('backend/public/api.php?path=skills/tree').then((r) => r.json()),
   ])
     .then(([playerState, skills]) => {
+      // Cache skills for later branch rendering.
+      allSkills = Array.isArray(skills) ? skills : [];
+
       // Prefer spendable coins if provided by backend; fallback to lifetime coins.
       const coinsRaw =
         typeof playerState.availableCoins === 'number'
           ? playerState.availableCoins
           : playerState.coins;
       const coins = Number(coinsRaw || 0);
+      availableCoins = coins;
       coinsEl.textContent = `Coins: ${coins}`;
 
       // Keep main gameplay HUD (if present) in sync with spendable coins.
@@ -133,6 +330,11 @@ export function renderSkillTree(container, options = {}) {
       }
 
       if (Array.isArray(playerState.skills)) {
+        playerSkillLevels = {};
+        playerState.skills.forEach((s) => {
+          playerSkillLevels[s.skillKey] = Number(s.current_level || 0);
+        });
+
         const core = playerState.skills.find((s) => s.skillKey === 'core_center');
         if (core) {
           coreLevel = Number(core.current_level || 0);
@@ -140,6 +342,7 @@ export function renderSkillTree(container, options = {}) {
       }
 
       applyCoreSkillState(coreLevel, coreMaxLevel);
+      renderBranches();
     })
     .catch(() => {
       coinsEl.textContent = 'Coins: ?';
@@ -164,14 +367,20 @@ export function renderSkillTree(container, options = {}) {
         }
 
         coreLevel = Number(res.current_level || 0);
-        const newCoins = Number(res.availableCoins || 0);
-        coinsEl.textContent = `Coins: ${newCoins}`;
+        availableCoins = Number(res.availableCoins || availableCoins);
+        coinsEl.textContent = `Coins: ${availableCoins}`;
         // Also update gameplay HUD coins to reflect spent amount.
         const hudCoinsEl = document.querySelector('.sb-gameplay-coins');
         if (hudCoinsEl) {
-          hudCoinsEl.textContent = String(newCoins);
+          hudCoinsEl.textContent = String(availableCoins);
         }
         applyCoreSkillState(coreLevel, coreMaxLevel);
+        // Core just leveled up; attempt to render directional branches now.
+        renderBranches();
+
+        if (typeof onSkillsChanged === 'function') {
+          onSkillsChanged();
+        }
       })
       .catch(() => {
         // Ignore network errors for now.
@@ -179,36 +388,10 @@ export function renderSkillTree(container, options = {}) {
   });
 
   coreSkill.addEventListener('mouseenter', () => {
-    if (!coreDef) {
-      tooltip.innerHTML = '';
-      return;
-    }
-
-    const name = coreDef.name || 'Core Skill';
-    const desc = coreDef.description || '';
-    const baseCost = Number(coreDef.base_cost || 0);
-
-    const levelText = `${coreLevel}/${coreMaxLevel}`;
-    const costText = baseCost > 0 && coreLevel === 0
-      ? `Cost: ${baseCost} coins`
-      : '';
-
-    // Top row: name (left) and level (right). Description below.
-    tooltip.innerHTML = `
-      <div class="sb-skill-tooltip__header">
-        <span class="sb-skill-tooltip__name">${name}</span>
-        <span class="sb-skill-tooltip__level">Lv ${levelText}</span>
-      </div>
-      <div class="sb-skill-tooltip__cost">${costText}</div>
-      <div class="sb-skill-tooltip__desc">${desc}</div>
-    `;
-    tooltip.classList.remove('sb-skill-tooltip--hidden');
-    tooltip.classList.add('sb-skill-tooltip--visible');
+    showTooltipFor(coreDef, coreLevel, coreMaxLevel, coreSkill);
   });
 
   coreSkill.addEventListener('mouseleave', () => {
-    tooltip.innerHTML = '';
-    tooltip.classList.remove('sb-skill-tooltip--visible');
-    tooltip.classList.add('sb-skill-tooltip--hidden');
+    hideTooltip();
   });
 }
