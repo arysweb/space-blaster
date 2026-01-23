@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 22, 2026 at 06:11 PM
+-- Generation Time: Jan 23, 2026 at 10:36 AM
 -- Server version: 8.4.7-0ubuntu0.25.04.2
 -- PHP Version: 8.4.5
 
@@ -34,6 +34,27 @@ CREATE TABLE `players` (
   `last_seen_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data for table `players`
+--
+
+INSERT INTO `players` (`id`, `name`, `created_at`, `last_seen_at`) VALUES
+(3, 'Sebas', '2026-01-22 18:18:04', '2026-01-22 18:18:04'),
+(4, 'Anon_1818', '2026-01-23 09:19:15', '2026-01-23 09:19:15');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `player_skills`
+--
+
+CREATE TABLE `player_skills` (
+  `player_id` int UNSIGNED NOT NULL,
+  `skill_id` int NOT NULL,
+  `current_level` tinyint UNSIGNED NOT NULL DEFAULT '1',
+  `unlocked_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- --------------------------------------------------------
 
 --
@@ -53,6 +74,52 @@ CREATE TABLE `player_stats` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
+-- Dumping data for table `player_stats`
+--
+
+INSERT INTO `player_stats` (`id`, `player_id`, `started_at`, `ended_at`, `minutes_played`, `kills`, `deaths`, `score`, `coins`) VALUES
+(7, 3, '2026-01-22 18:26:52', '2026-01-22 18:26:52', 0, 0, 1, 0, 0),
+(8, 3, '2026-01-22 18:30:30', '2026-01-22 18:30:30', 0, 0, 1, 0, 0),
+(9, 3, '2026-01-22 18:32:07', '2026-01-22 18:32:07', 1, 13, 1, 13, 13),
+(10, 3, '2026-01-22 18:32:56', '2026-01-22 18:32:56', 1, 12, 1, 12, 12),
+(11, 3, '2026-01-22 18:55:17', '2026-01-22 18:55:17', 1, 24, 1, 24, 24),
+(12, 3, '2026-01-22 19:39:30', '2026-01-22 19:39:30', 1, 0, 1, 0, 0),
+(13, 3, '2026-01-22 19:40:08', '2026-01-22 19:40:08', 0, 0, 1, 0, 0),
+(14, 3, '2026-01-22 19:40:18', '2026-01-22 19:40:18', 0, 0, 1, 0, 0),
+(15, 3, '2026-01-22 20:05:15', '2026-01-22 20:05:15', 0, 0, 1, 0, 0),
+(16, 3, '2026-01-22 20:12:08', '2026-01-22 20:12:08', 3, 61, 1, 61, 61),
+(17, 3, '2026-01-22 20:42:30', '2026-01-22 20:42:30', 1, 0, 1, 0, 0),
+(18, 4, '2026-01-23 09:29:59', '2026-01-23 09:29:59', 2, 25, 1, 25, 25);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `skills`
+--
+
+CREATE TABLE `skills` (
+  `id` int NOT NULL,
+  `key` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `icon` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT './assets/img/player_projectile.png',
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `x` int NOT NULL,
+  `y` int NOT NULL,
+  `base_cost` int NOT NULL DEFAULT '10',
+  `cost_per_level` int NOT NULL DEFAULT '5',
+  `max_level` tinyint NOT NULL DEFAULT '5',
+  `effect_type` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `effect_value_per_level` float DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `skills`
+--
+
+INSERT INTO `skills` (`id`, `key`, `name`, `icon`, `description`, `x`, `y`, `base_cost`, `cost_per_level`, `max_level`, `effect_type`, `effect_value_per_level`) VALUES
+(2, 'core_center', 'Skill Tree', './assets/img/player_projectile.png', 'Unlocks access to all upgrade paths.', 0, 0, 5, 5, 1, 'global_power', 2);
+
+--
 -- Indexes for dumped tables
 --
 
@@ -64,12 +131,27 @@ ALTER TABLE `players`
   ADD UNIQUE KEY `name` (`name`);
 
 --
+-- Indexes for table `player_skills`
+--
+ALTER TABLE `player_skills`
+  ADD PRIMARY KEY (`player_id`,`skill_id`),
+  ADD KEY `idx_player_skill` (`player_id`,`skill_id`),
+  ADD KEY `fk_player_skills_skill` (`skill_id`);
+
+--
 -- Indexes for table `player_stats`
 --
 ALTER TABLE `player_stats`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_player_time` (`player_id`,`started_at`),
   ADD KEY `idx_started_at` (`started_at`);
+
+--
+-- Indexes for table `skills`
+--
+ALTER TABLE `skills`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `key` (`key`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -79,17 +161,30 @@ ALTER TABLE `player_stats`
 -- AUTO_INCREMENT for table `players`
 --
 ALTER TABLE `players`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `player_stats`
 --
 ALTER TABLE `player_stats`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+
+--
+-- AUTO_INCREMENT for table `skills`
+--
+ALTER TABLE `skills`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `player_skills`
+--
+ALTER TABLE `player_skills`
+  ADD CONSTRAINT `fk_player_skills_player` FOREIGN KEY (`player_id`) REFERENCES `players` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_player_skills_skill` FOREIGN KEY (`skill_id`) REFERENCES `skills` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `player_stats`

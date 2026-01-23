@@ -28,15 +28,13 @@ body {
 
 .sb-panel,
 .sb-button,
-.sb-skill-node,
 .sb-stat-box {
   border-radius: 0;
   border: 2px solid var(--sb-border);
   box-shadow: 0 0 0 2px #000;
 }
 
-.sb-button,
-.sb-skill-node {
+.sb-button {
   background-color: var(--sb-bg-alt);
   color: var(--sb-fg);
 }
@@ -50,8 +48,7 @@ body {
   background-color: transparent;
 }
 
-.sb-button:hover,
-.sb-skill-node:hover {
+.sb-button:hover {
   filter: brightness(1.2);
 }
 

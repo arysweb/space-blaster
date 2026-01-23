@@ -1,0 +1,115 @@
+/* Skill tree specific styles */
+
+.sb-skill-tree {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.sb-skilltree {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sb-skill-node {
+  text-transform: uppercase;
+  padding: 1rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+  border-radius: 0;
+  border: 2px solid var(--sb-border);
+  box-shadow: 0 0 0 2px #000;
+  background-color: var(--sb-bg-alt);
+  color: var(--sb-fg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+}
+
+.sb-skill-node:hover {
+  filter: brightness(1.2);
+}
+
+/* State variants */
+.sb-skill-node--locked-unavailable {
+  border-color: rgba(160, 160, 160, 0.3);
+  opacity: 0.3;
+}
+
+.sb-skill-node--locked-available {
+  border-color: rgba(200, 200, 200, 0.7);
+  opacity: 0.6;
+}
+
+.sb-skill-node--unlocked {
+  border-color: #3fd46b;
+}
+
+.sb-skill-node--max {
+  border-color: #b266ff;
+}
+
+.sb-skill-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sb-skill-icon {
+  width: 24px;
+  height: 24px;
+  display: block;
+  image-rendering: pixelated;
+}
+
+.sb-skill-tooltip {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+  margin-left: 10px;
+  width: 320px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  color: var(--sb-muted);
+  background-color: rgba(0, 0, 0, 0.9);
+  border: 1px solid var(--sb-border);
+  box-shadow: 0 0 0 1px #000000;
+  text-align: left;
+  pointer-events: none;
+}
+
+.sb-skill-tooltip--hidden {
+  display: none;
+}
+
+.sb-skill-tooltip--visible {
+  display: block;
+}
+
+.sb-skill-tooltip__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 6px;
+}
+
+.sb-skill-tooltip__name,
+.sb-skill-tooltip__level {
+  font-weight: bold;
+}
+
+.sb-skill-tooltip__cost {
+  font-size: 0.75rem;
+  margin-bottom: 6px;
+}
+
+.sb-skill-tooltip__desc {
+  font-size: 0.75rem;
+  line-height: 1.6;
+  white-space: normal;
+}
