@@ -6,7 +6,7 @@ import { setupPlayerControls } from './player-controller.js';
 import { setupAliens } from './alien-manager.js';
 import { renderSkillTree } from './skill-tree.js';
 import { GAME_CONFIG } from '../game-config.js';
-import { BASE_PLAYER_STATS, applySkills } from '../utils/skills.js';
+import { computePlayerDerivedStats } from '../utils/skills.js';
 
 export function renderGameScreen(container) {
   const root = document.createElement('div');
@@ -104,6 +104,39 @@ export function renderGameScreen(container) {
   // Place HUD and toast inside the gameplay area.
   playfield.appendChild(hud);
   playfield.appendChild(waveToast);
+
+  const statsPanel = document.createElement('div');
+  statsPanel.style.position = 'absolute';
+  statsPanel.style.left = '12px';
+  statsPanel.style.bottom = '12px';
+  statsPanel.style.zIndex = '10';
+  statsPanel.style.pointerEvents = 'none';
+
+  const statsList = document.createElement('ul');
+  statsList.style.listStyle = 'none';
+  statsList.style.margin = '0';
+  statsList.style.padding = '0';
+  statsList.className = 'sb-modal-text';
+
+  const statFr = document.createElement('li');
+  statFr.textContent = 'Fire Rate: -';
+  const statHp = document.createElement('li');
+  statHp.textContent = 'Max HP: -';
+  const statCrit = document.createElement('li');
+  statCrit.textContent = 'Crit Chance: -';
+  const statCoins = document.createElement('li');
+  statCoins.textContent = 'Coins/Kill Bonus: -';
+  const statDmg = document.createElement('li');
+  statDmg.textContent = 'Damage Mult: -';
+
+  statsList.appendChild(statFr);
+  statsList.appendChild(statHp);
+  statsList.appendChild(statCrit);
+  statsList.appendChild(statCoins);
+  statsList.appendChild(statDmg);
+  statsPanel.appendChild(statsList);
+  playfield.appendChild(statsPanel);
+
   playfield.appendChild(bgLayer);
   playfield.appendChild(player);
   playfield.appendChild(skillOverlay);
@@ -114,8 +147,12 @@ export function renderGameScreen(container) {
   // Set up the animated background clouds.
   setupBackgroundClouds(playfield, bgLayer, root);
 
-  // Player stats after applying skills (fire rate, coin gain, health, crit...).
-  let playerStats = { ...BASE_PLAYER_STATS };
+  // Finalized player stats after applying skills (gameplay-ready).
+  let playerStats = computePlayerDerivedStats({
+    baseShotsPerSecond: GAME_CONFIG.baseShotsPerSecond || 4,
+    playerSkills: [],
+    skillDefs: [],
+  });
 
   // Player input controller so we can update fire rate mid-run.
   let playerControls = null;
@@ -129,14 +166,39 @@ export function renderGameScreen(container) {
   let cachedSkillDefs = [];
   let cachedPlayerSkills = [];
 
-  function recomputePlayerStats() {
-    playerStats = applySkills(BASE_PLAYER_STATS, cachedPlayerSkills, cachedSkillDefs);
+  function updateStatsHud() {
+    const fr =
+      typeof playerStats.shotsPerSecond === 'number' && Number.isFinite(playerStats.shotsPerSecond)
+        ? playerStats.shotsPerSecond
+        : 0;
+    const hp = Math.max(1, Math.round(playerStats.maxHealth || 1));
+    const critPct = Math.max(0, Math.min(1, playerStats.critChance || 0)) * 100;
+    const coinsBonus = Math.max(0, Math.round(playerStats.coinsPerKillBonus || 0));
+    const dmgMult =
+      typeof playerStats.damageMultiplier === 'number' && Number.isFinite(playerStats.damageMultiplier)
+        ? playerStats.damageMultiplier
+        : 1;
 
-    const baseShotsPerSecond = GAME_CONFIG.baseShotsPerSecond || 4;
-    const effectiveShotsPerSecond = baseShotsPerSecond * (playerStats.fireRate || 1);
+    statFr.textContent = `Fire Rate: ${fr.toFixed(1)}/s`;
+    statHp.textContent = `Max HP: ${hp}`;
+    statCrit.textContent = `Crit Chance: ${Math.round(critPct)}%`;
+    statCoins.textContent = `Coins/Kill Bonus: +${coinsBonus}`;
+    statDmg.textContent = `Damage Mult: x${dmgMult.toFixed(2)}`;
+  }
+
+  function recomputePlayerStats() {
+    playerStats = computePlayerDerivedStats({
+      baseShotsPerSecond: GAME_CONFIG.baseShotsPerSecond || 4,
+      playerSkills: cachedPlayerSkills,
+      skillDefs: cachedSkillDefs,
+    });
+
+    const effectiveShotsPerSecond = playerStats.shotsPerSecond || (GAME_CONFIG.baseShotsPerSecond || 4);
     if (playerControls && typeof playerControls.setShotsPerSecond === 'function') {
       playerControls.setShotsPerSecond(effectiveShotsPerSecond);
     }
+
+    updateStatsHud();
   }
 
   // Set up aliens that spawn outside and move toward the player.
@@ -249,11 +311,17 @@ export function renderGameScreen(container) {
     })
     .catch(() => {
       // If backend is unavailable, keep base stats and starting coins.
-      playerStats = { ...BASE_PLAYER_STATS };
+      playerStats = computePlayerDerivedStats({
+        baseShotsPerSecond: GAME_CONFIG.baseShotsPerSecond || 4,
+        playerSkills: [],
+        skillDefs: [],
+      });
     })
     .finally(() => {
-      const baseShotsPerSecond = GAME_CONFIG.baseShotsPerSecond || 4;
-      const effectiveShotsPerSecond = baseShotsPerSecond * (playerStats.fireRate || 1);
+      const effectiveShotsPerSecond =
+        playerStats.shotsPerSecond || (GAME_CONFIG.baseShotsPerSecond || 4);
+
+      updateStatsHud();
 
       // Set up player controls after we know the effective fire rate from skills.
       playerControls = setupPlayerControls(playfield, player, {

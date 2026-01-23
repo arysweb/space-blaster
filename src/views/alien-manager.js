@@ -101,11 +101,11 @@ export function setupAliens(playfield, player, callbacks = {}) {
       ? callbacks.getPlayerStats
       : () =>
           callbacks.playerStats || {
-            fireRate: 1.0,
-            coinGain: 0,
+            shotsPerSecond: 4,
+            coinsPerKillBonus: 0,
             maxHealth: 1,
             critChance: 0.0,
-            globalPower: 1.0,
+            damageMultiplier: 1.0,
           };
 
   // Player health in "lives"; skills directly increase maxHealth.
@@ -326,7 +326,7 @@ export function setupAliens(playfield, player, callbacks = {}) {
           const critChance = Math.max(0, Math.min(1, playerStats.critChance || 0));
           const didCrit = critChance > 0 && Math.random() < critChance;
 
-          let damage = baseDamage * (playerStats.globalPower || 1);
+          let damage = baseDamage * (playerStats.damageMultiplier || 1);
           if (didCrit) {
             damage *= critMultiplier;
           }
@@ -383,8 +383,7 @@ export function setupAliens(playfield, player, callbacks = {}) {
             killsThisLevel += 1;
             // Reward coins: base from level plus flat bonus from skills.
             const baseKillCoins = currentLevel;
-            const coinGainRaw = Number(playerStats.coinGain || 0);
-            const extraCoins = coinGainRaw > 0 ? Math.max(1, Math.round(coinGainRaw)) : 0;
+            const extraCoins = Math.max(0, Math.round(playerStats.coinsPerKillBonus || 0));
             const coinsForKill = baseKillCoins + extraCoins;
             runCoins += coinsForKill;
 
