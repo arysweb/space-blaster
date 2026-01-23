@@ -227,6 +227,13 @@ export function setupAliens(playfield, player, callbacks = {}) {
     for (let i = aliens.length - 1; i >= 0; i -= 1) {
       const alien = aliens[i];
 
+      // If this slot was cleared while iterating (e.g., during wave
+      // transitions that reset aliens), remove it safely and skip.
+      if (!alien || !alien.state || !alien.img) {
+        aliens.splice(i, 1);
+        continue;
+      }
+
       // Move toward player center.
       const centerX = playerRect.left + playerRect.width / 2 - rect.left;
       const centerY = playerRect.top + playerRect.height / 2 - rect.top;

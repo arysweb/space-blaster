@@ -12,7 +12,7 @@ export const GAME_CONFIG = {
 
   // Level progression (unlimited levels, 5 sublevels each)
   subLevelsPerLevel: 5,
-  killsPerSubLevel: 20,
+  killsPerSubLevel: 5,
 
   // Short pause between waves/sublevels where no new aliens spawn.
   wavePauseSeconds: 3,
